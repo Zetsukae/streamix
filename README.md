@@ -1,6 +1,6 @@
 # Streamix - Application de Streaming d'Animes
 
-Une application Electron dédiée pour regarder des animes sur franime.fr avec une interface optimisée et des fonctionnalités avancées.
+Une application Electron dédiée pour regarder des animes sur plusieurs services avec une interface optimisée et des fonctionnalités avancées.
 
 ## 🚀 Fonctionnalités
 
