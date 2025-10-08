@@ -115,7 +115,7 @@ L'application limite la navigation aux domaines suivants :
 
 ## 📝 Licence
 
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+Ce projet est sous licence GPL-2.0. Voir le fichier `LICENSE` pour plus de détails.
 
 ## 👥 Équipe
 
@@ -126,7 +126,7 @@ Développé avec ❤️ par **Uniware Team**
 
 ## ⚠️ Avertissement
 
-Cette application est un client pour franime.fr. Nous ne possédons pas les droits du contenu diffusé. Les publicités sont obligatoires pour soutenir le site gratuitement.
+Cette application est un client pour plusieurs services. Nous ne possédons pas les droits du contenu diffusé. Les publicités sont obligatoires pour soutenir le site gratuitement.
 
 ## 🐛 Signaler un Bug
 
