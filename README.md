@@ -30,7 +30,7 @@ Une application Electron dédiée pour regarder des animes sur plusieurs service
 - **Réinitialisation complète** des données utilisateur
 
 ### Compatibilité
-- **Multi-plateforme** : Windows, macOS (Prochainement), Linux (Prochainement)
+- **Multi-plateforme** : Windows, macOS (Prochainement), Linux
 - **Intégration système** avec notifications natives
 - **Gestion des liens externes** automatique
 
