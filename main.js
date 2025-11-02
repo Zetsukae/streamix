@@ -180,7 +180,7 @@ function createWindow() {
     
     mainWindow.webContents.executeJavaScript(`
       // Marquer anime-sama pour le CSS
-      if (window.location.href.includes('anime-sama.fr')) {
+      if (window.location.href.includes('anime-sama.org')) {
         document.body.setAttribute('data-anime-sama', 'true');
       }
       
@@ -198,8 +198,8 @@ function createWindow() {
         homeBtn.innerHTML = '<img src="https://i.imgur.com/lv3zp1J.png" alt="Home" style="width: 30px; height: 30px;">';
         homeBtn.onclick = () => {
           const currentUrl = window.location.href;
-          if (currentUrl.includes('anime-sama.fr')) {
-            window.location.href = 'https://anime-sama.fr/';
+          if (currentUrl.includes('anime-sama.org')) {
+            window.location.href = 'https://anime-sama.org/';
           } else if (currentUrl.includes('voiranime.com')) {
             window.location.href = 'https://v6.voiranime.com/';
           } else {
@@ -209,7 +209,7 @@ function createWindow() {
         document.body.appendChild(homeBtn);
         
         // Ajuster position selon header anime-sama
-        if (window.location.href.includes('anime-sama.fr')) {
+        if (window.location.href.includes('anime-sama.org')) {
           function adjustButtonPosition() {
             const header = document.querySelector('header, nav, .header, .navbar');
             const homeBtn = document.getElementById('streamix-home-btn');
@@ -284,7 +284,7 @@ function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     const urlObj = new URL(url)
     if (urlObj.hostname === "franime.fr" || urlObj.hostname.endsWith(".franime.fr") ||
-        urlObj.hostname === "anime-sama.fr" || urlObj.hostname.endsWith(".anime-sama.fr") ||
+        urlObj.hostname === "anime-sama.org" || urlObj.hostname.endsWith(".anime-sama.fr") ||
         urlObj.hostname === "v6.voiranime.com" || urlObj.hostname.endsWith(".voiranime.com") ||
         urlObj.hostname.includes("discord.com") || urlObj.hostname.includes("discordapp.com") ||
         urlObj.hostname.includes("google.com") || urlObj.hostname.includes("googleapis.com") ||
