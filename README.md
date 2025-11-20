@@ -115,7 +115,7 @@ L'application limite la navigation aux domaines suivants :
 
 ## 📝 Licence
 
-Ce projet est sous licence GPL-2.0. Voir le fichier `LICENSE` pour plus de détails.
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 ## 👥 Équipe
 
