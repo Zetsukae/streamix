@@ -1,6 +1,6 @@
 {
   "name": "streamix",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Application dédiée pour le Streaming",
   "author": "Uniware",
   "main": "main.js",
@@ -23,7 +23,6 @@
       "output": "dist",
       "buildResources": "assets"
     },
-
     "files": [
       "main.js",
       "preload.js",
@@ -73,5 +72,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
+  },
+  "dependencies": {
+    "electron-store": "^11.0.2"
   }
 }
