@@ -1,6 +1,45 @@
-const { app, BrowserWindow, Menu, shell, dialog, ipcMain, Notification } = require("electron")
-const path = require("path")
+const { app, BrowserWindow, BrowserView, ipcMain, Menu, shell, dialog, Notification } = require("electron")
+const path = require("node:path")
 const fs = require("fs")
+const { locales, languageNames, f1MenuTranslations } = require("./locales")
+
+const Store = require("electron-store")
+let store
+
+// Initialize store after checking if it's a constructor or default export
+try {
+  store = new (Store.default || Store)()
+} catch (error) {
+  console.error("Error initializing electron-store:", error)
+  // Fallback to basic file-based storage if electron-store fails
+  store = {
+    get: (key, defaultValue) => {
+      try {
+        const configPath = path.join(app.getPath("userData"), "config.json")
+        if (fs.existsSync(configPath)) {
+          const config = JSON.parse(fs.readFileSync(configPath, "utf8"))
+          return config[key] !== undefined ? config[key] : defaultValue
+        }
+        return defaultValue
+      } catch (e) {
+        return defaultValue
+      }
+    },
+    set: (key, value) => {
+      try {
+        const configPath = path.join(app.getPath("userData"), "config.json")
+        let config = {}
+        if (fs.existsSync(configPath)) {
+          config = JSON.parse(fs.readFileSync(configPath, "utf8"))
+        }
+        config[key] = value
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
+      } catch (e) {
+        console.error("Error saving config:", e)
+      }
+    },
+  }
+}
 
 let mainWindow
 let settingsWindow = null
@@ -15,24 +54,24 @@ async function checkForUpdates() {
 
     if (!data.tag_name) return
 
-    // Remove "v" prefix if present (e.g., v1.2.0 -> 1.2.0)
-    const latestVersion = data.tag_name.replace(/^v/, "")
+      // Remove "v" prefix if present (e.g., v1.2.0 -> 1.2.0)
+      const latestVersion = data.tag_name.replace(/^v/, "")
 
-    // Compare versions
-    if (latestVersion !== currentVersion) {
-      // Show a native notification
-      const notification = new Notification({
-        title: "Mise à jour disponible",
-        body: `Une nouvelle version de Streamix est disponible (v${latestVersion}). Cliquez pour télécharger.`,
-        icon: path.join(__dirname, "assets", "icon.png"),
-      })
+      // Compare versions
+      if (latestVersion !== currentVersion) {
+        // Show a native notification
+        const notification = new Notification({
+          title: "Mise à jour disponible",
+          body: `Une nouvelle version de Streamix est disponible (v${latestVersion}). Cliquez pour télécharger.`,
+                                              icon: path.join(__dirname, "assets", "icon.png"),
+        })
 
-      notification.on("click", () => {
-        shell.openExternal(data.html_url)
-      })
+        notification.on("click", () => {
+          shell.openExternal(data.html_url)
+        })
 
-      notification.show()
-    }
+        notification.show()
+      }
   } catch (error) {
     console.error("Erreur lors de la vérification des mises à jour:", error)
   }
@@ -54,16 +93,16 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     icon: path.join(__dirname, "assets", "icon.png"),
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      webSecurity: true,
-      devTools: true,
-      preload: path.join(__dirname, "preload.js"),
-    },
-    show: false,
-    autoHideMenuBar: true,
-    frame: isWindowsStyle, // Appliquer la barre native si Windows style
+                                 webPreferences: {
+                                   nodeIntegration: false,
+                                   contextIsolation: true,
+                                   webSecurity: true,
+                                   devTools: true,
+                                   preload: path.join(__dirname, "preload.js"),
+                                 },
+                                 show: false,
+                                 autoHideMenuBar: true,
+                                 frame: isWindowsStyle, // Appliquer la barre native si Windows style
   })
 
   const configPath = path.join(app.getPath("userData"), "first-launch.json")
@@ -71,165 +110,167 @@ function createWindow() {
 
   if (fs.existsSync(configPath)) {
     const config = JSON.parse(fs.readFileSync(configPath, "utf8"))
-    if (config.serviceUrl) {
+    if (config.sourceType === "custom" && preferences.experimentalMode) {
+      startUrl = config.customUrl || config.customServiceUrl || startUrl
+    } else if (config.serviceUrl) {
       startUrl = config.serviceUrl
     }
   } else {
     startUrl =
-      "data:text/html;charset=utf-8," +
-      encodeURIComponent(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Streamix - Setup</title>
-        <style>
-          body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(-45deg, #6c7ce7, #a55eea, #74b9ff, #81ecec);
-            background-size: 400% 400%;
-            animation: gradient 20s ease infinite;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            overflow: hidden;
-          }
-          @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-          .wave {
-            position: absolute;
-            border-radius: 40%;
-            background: rgba(255, 255, 255, 0.08);
-            z-index: -1;
-          }
-          .wave1 {
-            width: 800px;
-            height: 825px;
-            top: -20%;
-            left: 30%;
-            margin-left: -400px;
-            margin-top: -400px;
-            animation: wave1 20s infinite linear;
-          }
-          .wave2 {
-            width: 600px;
-            height: 625px;
-            top: -15%;
-            right: 20%;
-            margin-right: -300px;
-            margin-top: -300px;
-            animation: wave2 25s infinite linear reverse;
-          }
-          .wave3 {
-            width: 400px;
-            height: 425px;
-            bottom: -10%;
-            left: 10%;
-            margin-left: -200px;
-            margin-bottom: -200px;
-            animation: wave3 18s infinite linear;
-          }
-          @keyframes wave1 {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          @keyframes wave2 {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          @keyframes wave3 {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          .container {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 15px;
-            padding: 40px;
-            text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            max-width: 400px;
-            width: 100%;
-            z-index: 10;
-          }
-          h1 {
-            font-size: 28px;
-            margin-bottom: 15px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-          }
-          p {
-            font-size: 14px;
-            margin-bottom: 30px;
-            opacity: 0.9;
-          }
-          .service-button {
-            width: 100%;
-            padding: 15px 25px;
-            margin-bottom: 15px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 10px;
-            background: rgba(255,255,255,0.15);
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-          }
-          .service-button:hover {
-            background: rgba(255,255,255,0.25);
-            border-color: rgba(255,255,255,0.5);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-          }
-          .service-button:active {
-            transform: translateY(0);
-          }
-        </style>
-      </head>
-      <body>
-        <div class="wave wave1"></div>
-        <div class="wave wave2"></div>
-        <div class="wave wave3"></div>
-        <div class="container">
-          <h1>Bienvenue sur Streamix</h1>
-          <p>Choisissez votre service de streaming préféré</p>
-          
-          <button class="service-button" onclick="selectService('franime')">
-            Franime
-          </button>
-          
-          <button class="service-button" onclick="selectService('animesama')">
-            Anime Sama
-          </button>
-          
-          <button class="service-button" onclick="selectService('voiranime')">
-            Voiranime
-          </button>
-        </div>
-        
-        <script>
-          function selectService(service) {
-            let serviceUrl = 'https://franime.fr/';
-            
-            if (service === 'animesama') {
-              serviceUrl = 'https://anime-sama.org/';
-            } else if (service === 'voiranime') {
-              serviceUrl = 'https://v6.voiranime.com/';
-            }
-            
-            window.electronAPI.selectService({ serviceUrl });
-          }
-        </script>
-      </body>
-      </html>
+    "data:text/html;charset=utf-8," +
+    encodeURIComponent(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <title>Streamix - Setup</title>
+    <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(-45deg, #6c7ce7, #a55eea, #74b9ff, #81ecec);
+      background-size: 400% 400%;
+      animation: gradient 20s ease infinite;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+    }
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .wave {
+      position: absolute;
+      border-radius: 40%;
+      background: rgba(255, 255, 255, 0.08);
+      z-index: -1;
+    }
+    .wave1 {
+      width: 800px;
+      height: 825px;
+      top: -20%;
+      left: 30%;
+      margin-left: -400px;
+      margin-top: -400px;
+      animation: wave1 20s infinite linear;
+    }
+    .wave2 {
+      width: 600px;
+      height: 625px;
+      top: -15%;
+      right: 20%;
+      margin-right: -300px;
+      margin-top: -300px;
+      animation: wave2 25s infinite linear reverse;
+    }
+    .wave3 {
+      width: 400px;
+      height: 425px;
+      bottom: -10%;
+      left: 10%;
+      margin-left: -200px;
+      margin-bottom: -200px;
+      animation: wave3 18s infinite linear;
+    }
+    @keyframes wave1 {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes wave2 {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes wave3 {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .container {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 15px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      max-width: 400px;
+      width: 100%;
+      z-index: 10;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 15px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    p {
+      font-size: 14px;
+      margin-bottom: 30px;
+      opacity: 0.9;
+    }
+    .service-button {
+      width: 100%;
+      padding: 15px 25px;
+      margin-bottom: 15px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    .service-button:hover {
+      background: rgba(255,255,255,0.25);
+      border-color: rgba(255,255,255,0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .service-button:active {
+      transform: translateY(0);
+    }
+    </style>
+    </head>
+    <body>
+    <div class="wave wave1"></div>
+    <div class="wave wave2"></div>
+    <div class="wave wave3"></div>
+    <div class="container">
+    <h1>Bienvenue sur Streamix</h1>
+    <p>Choisissez votre service de streaming préféré</p>
+
+    <button class="service-button" onclick="selectService('franime')">
+    Franime
+    </button>
+
+    <button class="service-button" onclick="selectService('animesama')">
+    Anime Sama
+    </button>
+
+    <button class="service-button" onclick="selectService('voiranime')">
+    Voiranime
+    </button>
+    </div>
+
+    <script>
+    function selectService(service) {
+      let serviceUrl = 'https://franime.fr/';
+
+      if (service === 'animesama') {
+        serviceUrl = 'https://anime-sama.eu/';
+      } else if (service === 'voiranime') {
+        serviceUrl = 'https://v6.voiranime.com/';
+      }
+
+      window.electronAPI.selectService({ serviceUrl });
+    }
+    </script>
+    </body>
+    </html>
     `)
   }
 
@@ -248,6 +289,146 @@ function createWindow() {
     trackHistory(url)
   })
 
+  mainWindow.webContents.on("did-finish-load", () => {
+    const currentUrl = mainWindow.webContents.getURL()
+    if (currentUrl.startsWith("data:text/html")) {
+      return // Don't inject buttons on the welcome screen
+    }
+
+    const config = store.get("config", {})
+    const currentService = config.service || "franime"
+    const isAnimeSama = currentUrl.includes("anime-sama.eu")
+    const isVoirAnime = currentUrl.includes("voiranime.com")
+    const isCustomUrl = config.sourceType === "custom" && config.customServiceUrl
+
+    if ((currentService === "animesama" || isAnimeSama || isCustomUrl) && !isVoirAnime) {
+      mainWindow.webContents
+      .executeJavaScript(
+        `
+        const observer = new MutationObserver(() => {
+          const header = document.querySelector('header, nav, .header, .navbar');
+          if (header) {
+            observer.disconnect();
+            setTimeout(() => {
+              injectButtons();
+            }, 800);
+          }
+        });
+
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+
+        setTimeout(() => {
+          observer.disconnect();
+          injectButtons();
+        }, 3000);
+
+        function injectButtons() {
+          if (!document.getElementById('window-controls')) {
+            const controls = document.createElement('div');
+            controls.id = 'window-controls';
+            controls.innerHTML = \`
+            <button id="minimize-btn">−</button>
+            <button id="close-btn">×</button>
+            \`;
+            document.body.appendChild(controls);
+
+            document.getElementById('minimize-btn').onclick = () => {
+              if(window.electronAPI) window.electronAPI.minimizeWindow();
+            };
+
+              document.getElementById('close-btn').onclick = () => {
+                if(window.electronAPI) window.electronAPI.closeWindow();
+              };
+          }
+        }
+
+        if (!document.getElementById('streamix-home-btn')) {
+          const homeBtn = document.createElement('button');
+          homeBtn.id = 'streamix-home-btn';
+          homeBtn.innerHTML = '<img src="https://i.imgur.com/lv3zp1J.png" alt="Home" style="width: 30px; height: 30px;">';
+          homeBtn.onclick = () => {
+            if(window.electronAPI) window.electronAPI.triggerF1Menu();
+          };
+            document.body.appendChild(homeBtn);
+
+            if (window.location.href.includes('anime-sama.fr') || window.location.href.includes('anime-sama.eu')) {
+              function adjustButtonPosition() {
+                const header = document.querySelector('header, nav, .header, .navbar');
+                const homeBtn = document.getElementById('streamix-home-btn');
+                const controls = document.getElementById('window-controls');
+
+                if (header && homeBtn && controls) {
+                  const headerRect = header.getBoundingClientRect();
+                  const isHeaderVisible = headerRect.top >= 0 && headerRect.bottom > 0;
+
+                  if (isHeaderVisible) {
+                    homeBtn.style.top = (headerRect.bottom + 10) + 'px';
+                    controls.style.top = (headerRect.bottom + 10) + 'px';
+                  } else {
+                    homeBtn.style.top = '20px';
+                    controls.style.top = '20px';
+                  }
+                }
+              }
+
+              const observer = new MutationObserver(adjustButtonPosition);
+              observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true
+              });
+
+              window.addEventListener('scroll', adjustButtonPosition);
+              window.addEventListener('resize', adjustButtonPosition);
+
+              adjustButtonPosition();
+            }
+        }
+        `,
+        true,
+      )
+      .catch(console.error)
+    } else {
+      mainWindow.webContents
+      .executeJavaScript(
+        `
+        if (!document.getElementById('window-controls')) {
+          const controls = document.createElement('div');
+          controls.id = 'window-controls';
+          controls.innerHTML = \`
+          <button id="minimize-btn">−</button>
+          <button id="close-btn">×</button>
+          \`;
+          document.body.appendChild(controls);
+
+          document.getElementById('minimize-btn').onclick = () => {
+            if(window.electronAPI) window.electronAPI.minimizeWindow();
+          };
+
+            document.getElementById('close-btn').onclick = () => {
+              if(window.electronAPI) window.electronAPI.closeWindow();
+            };
+        }
+
+        if (!document.getElementById('streamix-home-btn')) {
+          const homeBtn = document.createElement('button');
+          homeBtn.id = 'streamix-home-btn';
+          homeBtn.innerHTML = '<img src="https://i.imgur.com/lv3zp1J.png" alt="Home" style="width: 30px; height: 30px;">';
+          homeBtn.onclick = () => {
+            if(window.electronAPI) window.electronAPI.triggerF1Menu();
+          };
+            document.body.appendChild(homeBtn);
+        }
+        `,
+        true,
+      )
+      .catch(console.error)
+    }
+  })
+
   mainWindow.webContents.on("dom-ready", () => {
     const stylePath = path.join(__dirname, "assets", "style.css")
     if (fs.existsSync(stylePath)) {
@@ -258,21 +439,21 @@ function createWindow() {
     const currentUrl = mainWindow.webContents.getURL()
     if (currentUrl.startsWith("data:text/html")) return
 
-    const showSearchBtn = currentUrl.includes("franime.fr")
+      const showSearchBtn = currentUrl.includes("franime.fr")
 
-    const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
-    let preferences = { windowStyle: "default" }
-    if (fs.existsSync(preferencesPath)) {
-      preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
-    }
-    const isWindowsStyle = preferences.windowStyle === "windows"
+      const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
+      let preferences = { windowStyle: "default" }
+      if (fs.existsSync(preferencesPath)) {
+        preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
+      }
+      const isWindowsStyle = preferences.windowStyle === "windows"
 
-    mainWindow.webContents
+      mainWindow.webContents
       .executeJavaScript(`
-      if (window.location.href.includes('anime-sama.fr') || window.location.href.includes('anime-sama.org')) {
+      if (window.location.href.includes('anime-sama.fr') || window.location.href.includes('anime-sama.eu')) {
         document.body.setAttribute('data-anime-sama', 'true');
       }
-      
+
       if (${showSearchBtn} && !document.getElementById('streamix-search-btn')) {
         const searchBtn = document.createElement('button');
         searchBtn.id = 'streamix-search-btn';
@@ -280,7 +461,7 @@ function createWindow() {
         searchBtn.onclick = () => window.location.href = 'https://franime.fr/recherche';
         document.body.appendChild(searchBtn);
       }
-      
+
       if (!document.getElementById('streamix-home-btn')) {
         const homeBtn = document.createElement('button');
         homeBtn.id = 'streamix-home-btn';
@@ -288,44 +469,47 @@ function createWindow() {
         homeBtn.onclick = () => {
           if(window.electronAPI) window.electronAPI.triggerF1Menu();
         };
-        document.body.appendChild(homeBtn);
-        
-        if (window.location.href.includes('anime-sama.fr') || window.location.href.includes('anime-sama.org')) {
-          function adjustButtonPosition() {
-            const header = document.querySelector('header, nav, .header, .navbar');
-            const homeBtn = document.getElementById('streamix-home-btn');
-            const controls = document.getElementById('window-controls');
-            
-            if (header && homeBtn && controls) {
-              const headerRect = header.getBoundingClientRect();
-              const isHeaderVisible = headerRect.top >= 0 && headerRect.bottom > 0;
-              
-              if (isHeaderVisible) {
-                homeBtn.style.top = (headerRect.bottom + 10) + 'px';
-                controls.style.top = (headerRect.bottom + 10) + 'px';
-              } else {
-                homeBtn.style.top = '20px';
-                controls.style.top = '10px';
+          document.body.appendChild(homeBtn);
+
+          if (window.location.href.includes('anime-sama.fr') || window.location.href.includes('anime-sama.eu')) {
+            function adjustButtonPosition() {
+              const header = document.querySelector('header, nav, .header, .navbar');
+              const homeBtn = document.getElementById('streamix-home-btn');
+              const controls = document.getElementById('window-controls');
+
+              if (header && homeBtn && controls) {
+                const headerRect = header.getBoundingClientRect();
+                const isHeaderVisible = headerRect.top >= 0 && headerRect.bottom > 0;
+
+                if (isHeaderVisible) {
+                  homeBtn.style.top = (headerRect.bottom + 10) + 'px';
+                  controls.style.top = (headerRect.bottom + 10) + 'px';
+                } else {
+                  homeBtn.style.top = '20px';
+                  controls.style.top = '10px';
+                }
               }
             }
+
+            setTimeout(adjustButtonPosition, 2000);
+            const observer = new MutationObserver(adjustButtonPosition);
+            observer.observe(document.body, { childList: true, subtree: true });
+            window.addEventListener('scroll', adjustButtonPosition);
+            window.addEventListener('resize', adjustButtonPosition);
+            window.addEventListener('load', adjustButtonPosition);
           }
-          
-          setTimeout(adjustButtonPosition, 500);
-          window.addEventListener('scroll', adjustButtonPosition);
-          window.addEventListener('resize', adjustButtonPosition);
-        }
       }
-      
+
       if (!document.getElementById('window-controls')) {
         const controls = document.createElement('div');
         controls.id = 'window-controls';
-        
+
         const isVoiranime = window.location.href.includes('voiranime.com');
         const bgColor = isVoiranime ? 'rgba(0,0,0,0.5)' : 'transparent';
-        
+
         const isWindowsStyle = ${isWindowsStyle};
         const displayStyle = isWindowsStyle ? 'none' : 'flex';
-        
+
         const minimizeBtn = document.createElement('button');
         minimizeBtn.id = 'minimize-btn';
         minimizeBtn.textContent = '-';
@@ -333,27 +517,27 @@ function createWindow() {
         minimizeBtn.onclick = () => {
           if(window.electronAPI) window.electronAPI.minimize();
         };
-        
-        const closeBtn = document.createElement('button');
-        closeBtn.id = 'close-btn';
-        closeBtn.textContent = 'X';
-        closeBtn.style.cssText = \`width: 32px !important; height: 32px !important; border: none !important; border-radius: 8px !important; cursor: pointer !important; font-size: 16px !important; font-weight: bold !important; transition: all 0.3s ease !important; display: \${displayStyle} !important; align-items: center !important; justify-content: center !important; background: \${bgColor} !important; color: #ffffff !important; backdrop-filter: blur(10px) !important; z-index: 99999 !important;\`;
-        closeBtn.onclick = () => {
-          if(window.electronAPI) window.electronAPI.close();
-        };
-        
-        controls.style.cssText = 'position: fixed !important; top: 10px !important; right: 10px !important; z-index: 99999 !important; display: \${displayStyle} !important; gap: 5px !important;';
-        controls.appendChild(minimizeBtn);
-        controls.appendChild(closeBtn);
-        document.body.appendChild(controls);
+
+          const closeBtn = document.createElement('button');
+          closeBtn.id = 'close-btn';
+          closeBtn.textContent = 'X';
+          closeBtn.style.cssText = \`width: 32px !important; height: 32px !important; border: none !important; border-radius: 8px !important; cursor: pointer !important; font-size: 16px !important; font-weight: bold !important; transition: all 0.3s ease !important; display: \${displayStyle} !important; align-items: center !important; justify-content: center !important; background: \${bgColor} !important; color: #ffffff !important; backdrop-filter: blur(10px) !important; z-index: 99999 !important;\`;
+          closeBtn.onclick = () => {
+            if(window.electronAPI) window.electronAPI.close();
+          };
+
+            controls.style.cssText = 'position: fixed !important; top: 10px !important; right: 10px !important; z-index: 99999 !important; display: \${displayStyle} !important; gap: 5px !important;';
+            controls.appendChild(minimizeBtn);
+            controls.appendChild(closeBtn);
+            document.body.appendChild(controls);
       }
-      
+
       if (!document.getElementById('drag-zone')) {
         const dragZone = document.createElement('div');
         dragZone.id = 'drag-zone';
         document.body.appendChild(dragZone);
       }
-    `)
+      `)
       .catch((err) => console.error("Erreur DOM injection:", err))
   })
 
@@ -370,8 +554,8 @@ function createWindow() {
     if (
       urlObj.hostname === "franime.fr" ||
       urlObj.hostname.endsWith(".franime.fr") ||
-      urlObj.hostname === "anime-sama.org" ||
-      urlObj.hostname.endsWith(".anime-sama.org") ||
+      urlObj.hostname === "anime-sama.eu" ||
+      urlObj.hostname.endsWith(".anime-sama.eu") ||
       urlObj.hostname === "v6.voiranime.com" ||
       urlObj.hostname.endsWith(".voiranime.com") ||
       urlObj.hostname.includes("discord.com") ||
@@ -403,8 +587,8 @@ function createWindow() {
     if (
       urlObj.hostname === "franime.fr" ||
       urlObj.hostname.endsWith(".franime.fr") ||
-      urlObj.hostname === "anime-sama.org" ||
-      urlObj.hostname.endsWith(".anime-sama.org") ||
+      urlObj.hostname === "anime-sama.eu" ||
+      urlObj.hostname.endsWith(".anime-sama.eu") ||
       urlObj.hostname === "v6.voiranime.com" ||
       urlObj.hostname.endsWith(".voiranime.com") ||
       urlObj.hostname.includes("discord.com") ||
@@ -419,95 +603,25 @@ function createWindow() {
     shell.openExternal(url)
   })
 
+  // The F1 key event handler from the updates has been integrated here.
   mainWindow.webContents.on("before-input-event", (event, input) => {
     if (input.control === false && input.shift === false && input.alt === false && input.meta === false) {
       if (input.key.toLowerCase() === "f1") {
         event.preventDefault()
+        const config = store.get("config", {})
+        const currentLang = config.language || "fr"
+        const menuTexts = (f1MenuTranslations && f1MenuTranslations[currentLang]) || {
+          home: "Accueil",
+          refresh: "Actualiser",
+          previous: "Précédent",
+          next: "Suivant",
+          settings: "Paramètres",
+          quit: "Quitter",
+        }
 
-        mainWindow.webContents
-          .executeJavaScript(`
-            try {
-              if (!window.openSettings) {
-                window.openSettings = async () => {
-                  await window.electronAPI.openSettings();
-                };
-              }
-              
-              let menu = document.getElementById('custom-menu');
-              if (menu) {
-                if (menu.style.display === 'none') {
-                  menu.style.display = 'block';
-                } else {
-                  menu.style.display = 'none';
-                }
-              } else {
-                menu = document.createElement('div');
-                menu.id = 'custom-menu';
-                menu.style.cssText = 'position:fixed;top:60px;left:20px;z-index:10002;background:rgba(30,30,30,0.95);backdrop-filter:blur(15px);border:1px solid #333;border-radius:8px;padding:8px 0;min-width:150px;box-shadow:0 8px 25px rgba(0,0,0,0.3);';
-                
-                const currentUrl = window.location.href;
-                let homeUrl = 'https://franime.fr/';
-                if (currentUrl.includes('anime-sama.org')) {
-                  homeUrl = 'https://anime-sama.org/';
-                } else if (currentUrl.includes('voiranime.com')) {
-                  homeUrl = 'https://v6.voiranime.com/';
-                }
-                
-                const items = [
-                  {text: 'Accueil', action: \`window.location.href="\${homeUrl}"\`},
-                  {text: 'Actualiser', action: 'window.location.reload()'},
-                  {text: 'Précédent', action: 'window.history.back()'},
-                  {text: 'Suivant', action: 'window.history.forward()'},
-                  {separator: true},
-                  {text: 'Paramètres', action: 'openSettings'},
-                  {separator: true},
-                  {text: 'Quitter', action: 'window.close()'}
-                ];
-                
-                items.forEach(item => {
-                  if (item.separator) {
-                    const sep = document.createElement('div');
-                    sep.style.cssText = 'height:1px;background:#444;margin:5px 10px;';
-                    menu.appendChild(sep);
-                  } else {
-                    const menuItem = document.createElement('div');
-                    menuItem.textContent = item.text;
-                    menuItem.style.cssText = 'padding:10px 15px;color:#ffffff;cursor:pointer;transition:all 0.2s ease;font-size:14px;';
-                    menuItem.onmouseover = () => {
-                      menuItem.style.background = 'rgba(255,255,255,0.1)';
-                      menuItem.style.color = '#ff6b6b';
-                    };
-                    menuItem.onmouseout = () => {
-                      menuItem.style.background = 'transparent';
-                      menuItem.style.color = '#ffffff';
-                    };
-                    menuItem.onclick = () => {
-                      if (item.text === 'Paramètres') {
-                        window.openSettings();
-                      } else {
-                        eval(item.action);
-                      }
-                    };
-                    menu.appendChild(menuItem);
-                  }
-                });
-                
-                document.body.appendChild(menu);
-                
-                setTimeout(() => {
-                  document.addEventListener('click', function closeMenu(e) {
-                    if (!menu.contains(e.target)) {
-                      menu.style.display = 'none';
-                      document.removeEventListener('click', closeMenu);
-                    }
-                  }, {once: false});
-                }, 100);
-              }
-            } catch(e) {
-              console.error('Menu error:', e);
-            }
-          `)
-          .catch((err) => console.error("Erreur executeJavaScript:", err))
+        mainWindow.webContents.executeJavaScript(createF1MenuScript(menuTexts)).catch((err) => {
+          console.error("Error executing F1 menu:", err)
+        })
       }
       if (input.key.toLowerCase() === "f3") {
         event.preventDefault()
@@ -574,9 +688,12 @@ function createApplicationMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
 }
 
-// La sélection de service est maintenant directement intégrée dans la page de setup
+async function initializeApp() {
+  // Removed direct import of electron-store and initialization of store here
+  // const StoreModule = await import("electron-store")
+  // const Store = StoreModule.default
+  // store = new Store() // Store is now initialized directly
 
-app.whenReady().then(() => {
   createWindow()
   Menu.setApplicationMenu(null)
 
@@ -588,9 +705,14 @@ app.whenReady().then(() => {
     const configPath = path.join(app.getPath("userData"), "first-launch.json")
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
 
-    if (mainWindow) {
-      mainWindow.loadURL(config.serviceUrl)
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.close()
     }
+
+    setTimeout(() => {
+      app.relaunch()
+      app.exit(0)
+    }, 300)
 
     return true
   })
@@ -613,7 +735,12 @@ app.whenReady().then(() => {
     })
   })
 
+  // Updated to use same compact style as triggerF1Menu
   ipcMain.handle("trigger-f1-menu", async (event) => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      return
+    }
+
     const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
     let preferences = { homeButtonBehavior: "menu" }
 
@@ -629,6 +756,10 @@ app.whenReady().then(() => {
         const config = JSON.parse(fs.readFileSync(configPath, "utf8"))
         if (config.serviceUrl) {
           homeUrl = config.serviceUrl
+        } else if (config.customUrl) {
+          homeUrl = config.customUrl
+        } else if (config.customServiceUrl) {
+          homeUrl = config.customServiceUrl
         }
       }
 
@@ -636,15 +767,16 @@ app.whenReady().then(() => {
       return
     }
 
-    mainWindow.webContents
-      .executeJavaScript(`
+    try {
+      await mainWindow.webContents.executeJavaScript(`
+      (function() {
         try {
           if (!window.openSettings) {
             window.openSettings = async () => {
               await window.electronAPI.openSettings();
             };
           }
-          
+
           let menu = document.getElementById('custom-menu');
           if (menu) {
             if (menu.style.display === 'none') {
@@ -656,82 +788,73 @@ app.whenReady().then(() => {
             menu = document.createElement('div');
             menu.id = 'custom-menu';
             menu.style.cssText = 'position:fixed;top:60px;left:20px;z-index:10002;background:rgba(30,30,30,0.95);backdrop-filter:blur(15px);border:1px solid #333;border-radius:8px;padding:8px 0;min-width:150px;box-shadow:0 8px 25px rgba(0,0,0,0.3);';
-            
+
             const currentUrl = window.location.href;
             let homeUrl = 'https://franime.fr/';
-            if (currentUrl.includes('anime-sama.org')) {
-              homeUrl = 'https://anime-sama.org/';
+            if (currentUrl.includes('anime-sama.eu')) {
+              homeUrl = 'https://anime-sama.eu/';
             } else if (currentUrl.includes('voiranime.com')) {
               homeUrl = 'https://v6.voiranime.com/';
             }
-            
+
             const items = [
-              {text: 'Accueil', action: \`window.location.href="\${homeUrl}"\`},
-              {text: 'Actualiser', action: 'window.location.reload()'},
-              {text: 'Précédent', action: 'window.history.back()'},
-              {text: 'Suivant', action: 'window.history.forward()'},
-              {separator: true},
-              {text: 'Paramètres', action: 'openSettings'},
-              {separator: true},
-              {text: 'Quitter', action: 'window.close()'}
+              {text: 'Accueil', action: function() { window.location.href = homeUrl; }},
+       {text: 'Actualiser', action: function() { window.location.reload(); }},
+       {text: 'Précédent', action: function() { window.history.back(); }},
+       {text: 'Suivant', action: function() { window.history.forward(); }},
+       {separator: true},
+       {text: 'Paramètres', action: function() { window.openSettings(); }}
             ];
-            
+
             items.forEach(item => {
               if (item.separator) {
-                const sep = document.createElement('div');
-                sep.style.cssText = 'height:1px;background:#444;margin:5px 10px;';
-                menu.appendChild(sep);
+                const separator = document.createElement('div');
+                separator.style.cssText = 'height:1px;background:#444;margin:4px 8px;';
+                menu.appendChild(separator);
               } else {
-                const menuItem = document.createElement('div');
-                menuItem.textContent = item.text;
-                menuItem.style.cssText = 'padding:10px 15px;color:#ffffff;cursor:pointer;transition:all 0.2s ease;font-size:14px;';
-                menuItem.onmouseover = () => {
-                  menuItem.style.background = 'rgba(255,255,255,0.1)';
-                  menuItem.style.color = '#ff6b6b';
+                const button = document.createElement('button');
+                button.textContent = item.text;
+                button.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 16px;background:none;border:none;color:#e0e0e0;font-size:14px;cursor:pointer;transition:background 0.2s;';
+                button.onmouseover = () => button.style.background = 'rgba(255,255,255,0.1)';
+                button.onmouseout = () => button.style.background = 'none';
+                button.onclick = () => {
+                  item.action();
+                  menu.style.display = 'none';
                 };
-                menuItem.onmouseout = () => {
-                  menuItem.style.background = 'transparent';
-                  menuItem.style.color = '#ffffff';
-                };
-                menuItem.onclick = () => {
-                  if (item.text === 'Paramètres') {
-                    window.openSettings();
-                  } else {
-                    eval(item.action);
-                  }
-                };
-                menu.appendChild(menuItem);
+                menu.appendChild(button);
               }
             });
-            
+
             document.body.appendChild(menu);
-            
-            setTimeout(() => {
-              document.addEventListener('click', function closeMenu(e) {
-                if (!menu.contains(e.target)) {
-                  menu.style.display = 'none';
-                  document.removeEventListener('click', closeMenu);
-                }
-              }, {once: false});
-            }, 100);
           }
-        } catch(e) {
-          console.error('Menu error:', e);
+          return true;
+        } catch (error) {
+          console.error('[Menu] Error:', error);
+          return false;
         }
+      })();
       `)
-      .catch((err) => console.error("Erreur executeJavaScript:", err))
+    } catch (error) {
+      console.error("[Main] Failed to execute F1 menu script:", error)
+    }
   })
 
+  // The triggerF1Menu handler from the updates has been integrated here.
   ipcMain.handle("triggerF1Menu", () => {
+    const config = store.get("config", {})
+    const currentLang = config.language || "fr"
+    const menuTexts = f1MenuTranslations[currentLang]
+
     mainWindow.webContents
-      .executeJavaScript(`
+    .executeJavaScript(`
+    (function() {
       try {
         if (!window.openSettings) {
           window.openSettings = async () => {
             await window.electronAPI.openSettings();
           };
         }
-        
+
         let menu = document.getElementById('custom-menu');
         if (menu) {
           if (menu.style.display === 'none') {
@@ -743,525 +866,851 @@ app.whenReady().then(() => {
           menu = document.createElement('div');
           menu.id = 'custom-menu';
           menu.style.cssText = 'position:fixed;top:60px;left:20px;z-index:10002;background:rgba(30,30,30,0.95);backdrop-filter:blur(15px);border:1px solid #333;border-radius:8px;padding:8px 0;min-width:150px;box-shadow:0 8px 25px rgba(0,0,0,0.3);';
-          
+
           const currentUrl = window.location.href;
           let homeUrl = 'https://franime.fr/';
-          if (currentUrl.includes('anime-sama.org')) {
-            homeUrl = 'https://anime-sama.org/';
+          if (currentUrl.includes('anime-sama.eu')) {
+            homeUrl = 'https://anime-sama.eu/';
           } else if (currentUrl.includes('voiranime.com')) {
             homeUrl = 'https://v6.voiranime.com/';
           }
-          
+
           const items = [
-            {text: 'Accueil', action: \`window.location.href="\${homeUrl}"\`},
-            {text: 'Actualiser', action: 'window.location.reload()'},
-            {text: 'Précédent', action: 'window.history.back()'},
-            {text: 'Suivant', action: 'window.history.forward()'},
-            {separator: true},
-            {text: 'Paramètres', action: 'openSettings'},
-            {separator: true},
-            {text: 'Quitter', action: 'window.close()'}
+            {text: 'Accueil', action: function() { window.location.href = homeUrl; }},
+     {text: 'Actualiser', action: function() { window.location.reload(); }},
+     {text: 'Précédent', action: function() { window.history.back(); }},
+     {text: 'Suivant', action: function() { window.history.forward(); }},
+     {separator: true},
+     {text: 'Paramètres', action: function() { window.openSettings(); }}
           ];
-          
+
           items.forEach(item => {
             if (item.separator) {
-              const sep = document.createElement('div');
-              sep.style.cssText = 'height:1px;background:#444;margin:5px 10px;';
-              menu.appendChild(sep);
+              const separator = document.createElement('div');
+              separator.style.cssText = 'height:1px;background:#444;margin:4px 8px;';
+              menu.appendChild(separator);
             } else {
-              const menuItem = document.createElement('div');
-              menuItem.textContent = item.text;
-              menuItem.style.cssText = 'padding:10px 15px;color:#ffffff;cursor:pointer;transition:all 0.2s ease;font-size:14px;';
-              menuItem.onmouseover = () => {
-                menuItem.style.background = 'rgba(255,255,255,0.1)';
-                menuItem.style.color = '#ff6b6b';
+              const button = document.createElement('button');
+              button.textContent = item.text;
+              button.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 16px;background:none;border:none;color:#e0e0e0;font-size:14px;cursor:pointer;transition:background 0.2s;';
+              button.onmouseover = () => button.style.background = 'rgba(255,255,255,0.1)';
+              button.onmouseout = () => button.style.background = 'none';
+              button.onclick = () => {
+                item.action();
+                menu.style.display = 'none';
               };
-              menuItem.onmouseout = () => {
-                menuItem.style.background = 'transparent';
-                menuItem.style.color = '#ffffff';
-              };
-              menuItem.onclick = () => {
-                if (item.text === 'Paramètres') {
-                  window.openSettings();
-                } else {
-                  eval(item.action);
-                }
-              };
-              menu.appendChild(menuItem);
+              menu.appendChild(button);
             }
           });
-          
+
           document.body.appendChild(menu);
-          
-          setTimeout(() => {
-            document.addEventListener('click', function closeMenu(e) {
-              if (!menu.contains(e.target)) {
-                menu.style.display = 'none';
-                document.removeEventListener('click', closeMenu);
-              }
-            }, {once: false});
-          }, 100);
         }
-      } catch(e) {
-        console.error('Menu error:', e);
+        return true;
+      } catch (error) {
+        console.error('[Menu] Error:', error);
+        return false;
       }
+    })();
     `)
-      .catch((err) => console.error("Erreur executeJavaScript:", err))
+    .catch(console.error)
   })
 
   ipcMain.handle("open-settings", async (event) => {
-    if (settingsWindow && !settingsWindow.isDestroyed()) {
+    if (settingsWindow) {
       settingsWindow.focus()
       return
     }
 
+    const config = store.get("config", {})
+    const currentLang = config.language || "fr"
+    const t = locales[currentLang]
+
     const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
     let preferences = { windowStyle: "default", homeButtonBehavior: "menu" }
-
     if (fs.existsSync(preferencesPath)) {
       preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
     }
-
-    const configPath = path.join(app.getPath("userData"), "first-launch.json")
-    let currentService = "franime"
-    if (fs.existsSync(configPath)) {
-      const config = JSON.parse(fs.readFileSync(configPath, "utf8"))
-      if (config.serviceUrl) {
-        if (config.serviceUrl.includes("anime-sama")) {
-          currentService = "animesama"
-        } else if (config.serviceUrl.includes("voiranime")) {
-          currentService = "voiranime"
-        }
-      }
-    }
+    const currentHomeButtonBehavior = preferences.homeButtonBehavior || "menu"
 
     settingsWindow = new BrowserWindow({
-      width: 600,
-      height: 650,
+      width: 900,
+      height: 700,
+      resizable: false,
       parent: mainWindow,
       modal: true,
       show: false,
+      frame: false,
+      backgroundColor: "#0a0a0a",
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
         preload: path.join(__dirname, "preload.js"),
       },
-      icon: path.join(__dirname, "assets", "icon.png"),
     })
 
-    const settingsHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
+    const currentService = config.service || "franime"
+    const currentWindowStyle = config.windowStyle || "default"
+    const sourceType = config.sourceType || "service"
+    const customUrl = config.customServiceUrl || ""
+    const experimentalEnabled = config.experimentalEnabled || false
+
+    settingsWindow.loadURL(
+      `data:text/html;charset=utf-8,${encodeURIComponent(`
+        <!DOCTYPE html>
+        <html>
+        <head>
         <meta charset="UTF-8">
-        <title>Paramètres Streamix</title>
+        <title>${t.settingsTitle}</title>
         <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a1a;
-            color: #ffffff;
-            height: 100vh;
-            display: flex;
-            overflow: hidden;
-          }
-          
-          .sidebar {
-            width: 180px;
-            background: #0f0f0f;
-            border-right: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            padding: 20px 0;
-          }
-          
-          .sidebar-item {
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border-left: 3px solid transparent;
-            color: #aaa;
-            font-size: 14px;
-          }
-          
-          .sidebar-item:hover {
-            background: rgba(255,255,255,0.05);
-            color: #fff;
-          }
-          
-          .sidebar-item.active {
-            background: rgba(255,107,107,0.1);
-            color: #ff6b6b;
-            border-left-color: #ff6b6b;
-          }
-          
-          .content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 30px;
-            overflow-y: auto;
-          }
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
 
-          /* Personnaliser la scrollbar */
-          .content::-webkit-scrollbar {
-            width: 8px;
-          }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background: #0a0a0a;
+          min-height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 0;
+          overflow: hidden;
+        }
 
-          .content::-webkit-scrollbar-track {
-            background: transparent;
-          }
+        .settings-container {
+          background: #111;
+          width: 100%;
+          max-width: 900px;
+          height: 700px;
+          display: flex;
+          overflow: hidden;
+          border: 1px solid #222;
+        }
 
-          .content::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-          }
+        .sidebar {
+          width: 220px;
+          background: #0a0a0a;
+          padding: 30px 0;
+          border-right: 1px solid #1a1a1a;
+        }
 
-          .content::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.2);
-          }
-          
-          .content-section {
-            display: none;
-          }
-          
-          .content-section.active {
-            display: block;
-          }
-          
-          h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #fff;
-          }
-          
-          .setting-group {
-            margin-bottom: 25px;
-          }
-          
-          .setting-label {
-            font-size: 14px;
-            color: #aaa;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-          }
-          
-          .radio-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-          
-          .radio-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 12px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid #333;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          }
-          
-          .radio-item:hover {
-            background: rgba(255,255,255,0.08);
-            border-color: #444;
-          }
-          
-          .radio-item input[type="radio"] {
-            margin-right: 10px;
-            cursor: pointer;
-            accent-color: #ff6b6b;
-          }
-          
-          .radio-item label {
-            cursor: pointer;
-            flex: 1;
-            color: #ccc;
-          }
-          
-          .about-text {
-            color: #aaa;
-            line-height: 1.6;
-            font-size: 14px;
-          }
-          
-          .about-text p {
-            margin-bottom: 10px;
-          }
+        .sidebar-item {
+          padding: 14px 24px;
+          color: #666;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          font-size: 13px;
+          font-weight: 500;
+          border-left: 2px solid transparent;
+          letter-spacing: 0.3px;
+        }
 
-          /* Ajouter styles pour les liens d'aide */
-          .help-links {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #333;
-          }
+        .sidebar-item:hover {
+          background: rgba(255,255,255,0.02);
+          color: #999;
+        }
 
-          .help-link {
-            display: flex;
-            align-items: center;
-            padding: 12px 15px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid #333;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-bottom: 10px;
-            color: #ccc;
-            text-decoration: none;
-          }
+        .sidebar-item.active {
+          background: rgba(220, 38, 38, 0.08);
+          color: #dc2626;
+          border-left-color: #dc2626;
+        }
 
-          .help-link:hover {
-            background: rgba(255,255,255,0.08);
-            border-color: #ff6b6b;
-            color: #ff6b6b;
-          }
+        .content {
+          flex: 1;
+          padding: 40px 40px 100px 40px;
+          overflow-y: auto;
+          position: relative;
+          background: #111;
+        }
 
-          .help-link::before {
-            content: '→';
-            margin-right: 10px;
-            font-weight: bold;
-          }
-          
-          .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: auto;
-            padding-top: 20px;
-            border-top: 1px solid #333;
-          }
-          
-          button {
-            flex: 1;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-weight: 600;
-          }
-          
-          .btn-save {
-            background: #ff6b6b;
-            color: #fff;
-          }
-          
-          .btn-save:hover {
-            background: #ff5252;
-          }
-          
-          .btn-cancel {
-            background: #333;
-            color: #fff;
-          }
-          
-          .btn-cancel:hover {
-            background: #444;
-          }
+        .section {
+          display: none;
+        }
 
-          .btn-reset {
-            background: #e74c3c;
-            color: #fff;
-            flex: none;
-            width: 100%;
-            margin-top: 15px;
-          }
-          
-          .btn-reset:hover {
-            background: #c0392b;
-          }
+        .section.active {
+          display: block;
+        }
 
-          .warning-text {
-            font-size: 12px;
-            color: #e74c3c;
-            margin-top: 8px;
-          }
+        .section-title {
+          font-size: 22px;
+          color: #fff;
+          margin-bottom: 32px;
+          font-weight: 600;
+          letter-spacing: -0.5px;
+        }
+
+        .setting-group {
+          margin-bottom: 28px;
+        }
+
+        .setting-label {
+          display: block;
+          color: #aaa;
+          margin-bottom: 10px;
+          font-size: 13px;
+          font-weight: 500;
+          letter-spacing: 0.2px;
+        }
+
+        .radio-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .radio-option {
+          display: flex;
+          align-items: center;
+          padding: 12px 16px;
+          background: #1a1a1a;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          border: 1.5px solid transparent;
+        }
+
+        .radio-option:hover {
+          background: #1f1f1f;
+          border-color: #2a2a2a;
+        }
+
+        .radio-option.selected {
+          background: rgba(220, 38, 38, 0.08);
+          border-color: #dc2626;
+        }
+
+        .radio-option input[type="radio"] {
+          margin-right: 12px;
+          width: 16px;
+          height: 16px;
+          cursor: pointer;
+          accent-color: #dc2626;
+        }
+
+        .radio-option label {
+          color: #ddd;
+          cursor: pointer;
+          flex: 1;
+          font-size: 13px;
+        }
+
+        select {
+          width: 100%;
+          padding: 12px 14px;
+          background: #1a1a1a;
+          border: 1.5px solid #2a2a2a;
+          border-radius: 12px;
+          color: #fff;
+          font-size: 13px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          font-family: inherit;
+        }
+
+        select:hover {
+          border-color: #dc2626;
+          background: #1f1f1f;
+        }
+
+        select:focus {
+          outline: none;
+          border-color: #dc2626;
+          background: #1f1f1f;
+        }
+
+        option {
+          background: #1a1a1a;
+          color: #fff;
+        }
+
+        input[type="text"] {
+          width: 100%;
+          padding: 12px 14px;
+          background: #1a1a1a;
+          border: 1.5px solid #2a2a2a;
+          border-radius: 12px;
+          color: #fff;
+          font-size: 13px;
+          transition: all 0.15s ease;
+          font-family: inherit;
+        }
+
+        input[type="text"]:hover {
+          border-color: #3a3a3a;
+        }
+
+        input[type="text"]:focus {
+          outline: none;
+          border-color: #dc2626;
+          background: #1f1f1f;
+        }
+
+        input[type="text"]::placeholder {
+          color: #555;
+        }
+
+        input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          margin-right: 12px;
+          cursor: pointer;
+          accent-color: #dc2626;
+        }
+
+        .checkbox-option {
+          display: flex;
+          align-items: center;
+          padding: 12px 16px;
+          background: #1a1a1a;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          border: 1.5px solid transparent;
+        }
+
+        .checkbox-option:hover {
+          background: #1f1f1f;
+          border-color: #2a2a2a;
+        }
+
+        .checkbox-option label {
+          color: #ddd;
+          cursor: pointer;
+          font-size: 13px;
+        }
+
+        .warning {
+          display: flex;
+          align-items: flex-start;
+          padding: 14px 16px;
+          background: rgba(234, 179, 8, 0.06);
+          border-left: 2px solid #eab308;
+          border-radius: 12px;
+          margin-top: 10px;
+        }
+
+        .warning-content {
+          flex: 1;
+        }
+
+        .warning p {
+          color: #fbbf24;
+          font-size: 12px;
+          margin-bottom: 6px;
+          line-height: 1.5;
+        }
+
+        .warning p strong {
+          color: #fcd34d;
+          font-weight: 600;
+        }
+
+        .warning ul {
+          list-style: none;
+          padding-left: 0;
+        }
+
+        .warning li {
+          color: #fde68a;
+          font-size: 11px;
+          margin-bottom: 4px;
+          padding-left: 16px;
+          position: relative;
+          line-height: 1.4;
+        }
+
+        .warning li:before {
+          content: "•";
+          position: absolute;
+          left: 0;
+          color: #eab308;
+        }
+
+        .actions {
+          position: fixed;
+          bottom: 0;
+          left: 220px;
+          right: 0;
+          padding: 18px 40px;
+          background: #0a0a0a;
+          border-top: 1px solid #1a1a1a;
+          display: flex;
+          gap: 10px;
+          justify-content: flex-end;
+          z-index: 100;
+        }
+
+        .btn-primary, .btn-secondary, .btn-danger {
+          padding: 11px 24px;
+          border: none;
+          border-radius: 12px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          letter-spacing: 0.2px;
+        }
+
+        .btn-primary {
+          background: #dc2626;
+          color: white;
+        }
+
+        .btn-primary:hover {
+          background: #b91c1c;
+        }
+
+        .btn-primary:active {
+          transform: scale(0.98);
+        }
+
+        .btn-secondary {
+          background: #1a1a1a;
+          color: #aaa;
+          border: 1.5px solid #2a2a2a;
+        }
+
+        .btn-secondary:hover {
+          background: #222;
+          border-color: #3a3a3a;
+          color: #ccc;
+        }
+
+        .btn-secondary:active {
+          transform: scale(0.98);
+        }
+
+        .btn-danger {
+          background: #dc2626;
+          color: white;
+        }
+
+        .btn-danger:hover {
+          background: #b91c1c;
+        }
+
+        .btn-danger:active {
+          transform: scale(0.98);
+        }
+
+        .about-content {
+          color: #aaa;
+        }
+
+        .version {
+          font-size: 16px;
+          color: #dc2626;
+          font-weight: 600;
+          margin-bottom: 28px;
+        }
+
+        .about-section {
+          margin-bottom: 24px;
+          padding: 18px;
+          background: #1a1a1a;
+          border-radius: 12px;
+          border: 1px solid #222;
+        }
+
+        .about-section h3 {
+          color: #fff;
+          margin-bottom: 12px;
+          font-size: 14px;
+          font-weight: 600;
+        }
+
+        .about-section p {
+          color: #999;
+          line-height: 1.6;
+          font-size: 13px;
+        }
+
+        .services-list {
+          list-style: none;
+          padding: 0;
+        }
+
+        .services-list li {
+          padding: 10px 14px;
+          background: rgba(220, 38, 38, 0.06);
+          border-radius: 10px;
+          margin-bottom: 6px;
+          color: #ccc;
+          font-size: 13px;
+          border: 1px solid rgba(220, 38, 38, 0.15);
+        }
+
+        .links {
+          display: flex;
+          gap: 10px;
+        }
+
+        .link-btn {
+          padding: 10px 18px;
+          background: rgba(220, 38, 38, 0.08);
+          border: 1.5px solid #dc2626;
+          border-radius: 12px;
+          color: #dc2626;
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.15s ease;
+          display: inline-block;
+        }
+
+        .link-btn:hover {
+          background: rgba(220, 38, 38, 0.15);
+        }
+
+        .link-btn:active {
+          transform: scale(0.98);
+        }
+
+        ::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: #111;
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background: #dc2626;
+          border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background: #b91c1c;
+        }
+
+        .hidden {
+          display: none !important;
+        }
         </style>
-      </head>
-      <body>
+        </head>
+        <body>
+        <div class="settings-container">
         <div class="sidebar">
-          <div class="sidebar-item active" data-section="general">Général</div>
-          <div class="sidebar-item" data-section="customization">Customisation</div>
-          <div class="sidebar-item" data-section="about">À propos</div>
+        <div class="sidebar-item active" data-section="general">${t.general}</div>
+        <div class="sidebar-item" data-section="customization">${t.customization}</div>
+        <div class="sidebar-item" data-section="developer">${t.developerOptions}</div>
+        <div class="sidebar-item" data-section="about">${t.about}</div>
         </div>
-        
+
         <div class="content">
-          <!-- Général -->
-          <div class="content-section active" id="general">
-            <h2>Paramètres généraux</h2>
-            
-            <div class="setting-group">
-              <div class="setting-label">Service de streaming</div>
-              <div class="radio-group">
-                <div class="radio-item">
-                  <input type="radio" id="service-franime" name="service" value="franime" ${currentService === "franime" ? "checked" : ""}>
-                  <label for="service-franime">Franime</label>
-                </div>
-                <div class="radio-item">
-                  <input type="radio" id="service-animesama" name="service" value="animesama" ${currentService === "animesama" ? "checked" : ""}>
-                  <label for="service-animesama">Anime Sama</label>
-                </div>
-                <div class="radio-item">
-                  <input type="radio" id="service-voiranime" name="service" value="voiranime" ${currentService === "voiranime" ? "checked" : ""}>
-                  <label for="service-voiranime">Voiranime</label>
-                </div>
-              </div>
-            </div>
+        <div class="section active" id="general">
+        <h2 class="section-title">${t.generalSettings}</h2>
 
-            <div class="setting-group">
-              <div class="setting-label">Bouton en haut à gauche</div>
-              <div class="radio-group">
-                <div class="radio-item">
-                  <input type="radio" id="menu-f1" name="homeButton" value="menu" ${preferences.homeButtonBehavior === "menu" ? "checked" : ""}>
-                  <label for="menu-f1">Afficher le menu F1</label>
-                </div>
-                <div class="radio-item">
-                  <input type="radio" id="home" name="homeButton" value="home" ${preferences.homeButtonBehavior === "home" ? "checked" : ""}>
-                  <label for="home">Aller à l'accueil</label>
-                </div>
-              </div>
-            </div>
+        <div class="setting-group">
+        <label class="setting-label">${t.language}</label>
+        <select id="language-select">
+        ${Object.entries(languageNames)
+          .map(([code, name]) => `<option value="${code}" ${code === currentLang ? "selected" : ""}>${name}</option>`)
+          .join("")}
+          </select>
+          </div>
 
-            <div class="setting-group">
-              <div class="setting-label">Réinitialisation</div>
-              <button class="btn-reset" id="resetBtn">Réinitialiser l'application</button>
-              <div class="warning-text">⚠️ Cela supprimera toutes vos préférences et redémarrera l'application</div>
-            </div>
+          <div class="setting-group" id="source-type-group" ${!experimentalEnabled ? 'style="display: none;"' : ""}>
+          <label class="setting-label">${t.sourceType}</label>
+          <div class="radio-group">
+          <div class="radio-option ${sourceType === "service" ? "selected" : ""}">
+          <input type="radio" name="sourceType" value="service" id="source-service" ${sourceType === "service" ? "checked" : ""}>
+          <label for="source-service">${t.useService}</label>
           </div>
-          
-          <!-- Customisation -->
-          <div class="content-section" id="customization">
-            <h2>Customisation</h2>
-            
-            <div class="setting-group">
-              <div class="setting-label">Style de la fenêtre</div>
-              <div class="radio-group">
-                <div class="radio-item">
-                  <input type="radio" id="default-style" name="windowStyle" value="default" ${preferences.windowStyle === "default" ? "checked" : ""}>
-                  <label for="default-style">Par défaut (Moderne)</label>
-                </div>
-                <div class="radio-item">
-                  <input type="radio" id="windows-style" name="windowStyle" value="windows" ${preferences.windowStyle === "windows" ? "checked" : ""}>
-                  <label for="windows-style">Barre Native de Linux GNU</label>
-                </div>
-              </div>
-            </div>
+          <div class="radio-option ${sourceType === "custom" ? "selected" : ""}">
+          <input type="radio" name="sourceType" value="custom" id="source-custom" ${sourceType === "custom" ? "checked" : ""}>
+          <label for="source-custom">${t.useCustomUrl}</label>
           </div>
-          
-          <!-- À propos -->
-          <div class="content-section" id="about">
-            <h2>À propos de Streamix</h2>
-            
-            <div class="about-text">
-              <!-- Ajout de la version BETA -->
-              <p><strong>Streamix v1.1.0 BETA</strong></p>
-              <p>Service de streaming disponible :</p>
-              <ul style="margin-left: 20px;">
-                <li>Franime</li>
-                <li>Animesama</li>
-                <li>Voiranime</li>
-              </ul>
-              <p style="margin-top: 15px;">Fait avec ❤ par Uniware Team</p>
-              <p style="font-size: 12px; color: #666; margin-top: 10px;">Nous ne possédons pas les droits des contenus affichés.</p>
-            </div>
+          </div>
+          </div>
 
-            <!-- Ajouter les liens d'aide dans À propos -->
-            <div class="help-links">
-              <h3 style="font-size: 16px; margin-bottom: 12px; color: #fff;">Liens utiles</h3>
-              <div class="help-link" id="link-doc">Documentation</div>
-              <div class="help-link" id="link-bug">Rapporter un bug</div>
+          <div class="setting-group" id="service-list-container" style="display: ${sourceType === "service" || !experimentalEnabled ? "block" : "none"};">
+          <label class="setting-label">${t.streamingService}</label>
+          <div class="radio-group">
+          <div class="radio-option ${currentService === "franime" ? "selected" : ""}">
+          <input type="radio" name="service" value="franime" id="service-franime" ${currentService === "franime" ? "checked" : ""}>
+          <label for="service-franime">Franime (franime.fr)</label>
+          </div>
+          <div class="radio-option ${currentService === "animesama" ? "selected" : ""}">
+          <input type="radio" name="service" value="animesama" id="service-animesama" ${currentService === "animesama" ? "checked" : ""}>
+          <label for="service-animesama">Anime-Sama (anime-sama.eu)</label>
+          </div>
+          <div class="radio-option ${currentService === "voiranime" ? "selected" : ""}">
+          <input type="radio" name="service" value="voiranime" id="service-voiranime" ${currentService === "voiranime" ? "checked" : ""}>
+          <label for="service-voiranime">VoirAnime (voiranime.com)</label>
+          </div>
+          </div>
+          </div>
+
+          <div class="setting-group" id="custom-url-container" style="display: ${sourceType === "custom" && experimentalEnabled ? "block" : "none"};">
+          <label class="setting-label">${t.customUrl}</label>
+          <input type="text" id="custom-url" placeholder="${t.customUrlPlaceholder}" value="${customUrl}">
+          <div class="warning">
+          <div class="warning-content">
+          <p>${t.customUrlWarning}</p>
+          </div>
+          </div>
+          </div>
+
+          <div class="setting-group">
+          <label class="setting-label">${t.topLeftButton}</label>
+          <div class="radio-group">
+          <div class="radio-option">
+          <input type="radio" name="homeButtonBehavior" value="menu" id="behavior-menu" ${currentHomeButtonBehavior === "menu" ? "checked" : ""}>
+          <label for="behavior-menu">${t.showMenuF1}</label>
+          </div>
+          <div class="radio-option">
+          <input type="radio" name="homeButtonBehavior" value="home" id="behavior-home" ${currentHomeButtonBehavior === "home" ? "checked" : ""}>
+          <label for="behavior-home">${t.goToHome}</label>
+          </div>
+          </div>
+          </div>
+
+          <div class="setting-group">
+          <label class="setting-label">${t.reset}</label>
+          <button class="btn-danger" onclick="resetApp()">${t.resetButton}</button>
+          <div class="warning">
+          <div class="warning-content">
+          <p>${t.resetWarning}</p>
+          </div>
+          </div>
+          </div>
+          </div>
+
+          <div class="section" id="customization">
+          <h2 class="section-title">${t.customizationTitle}</h2>
+
+          <div class="setting-group">
+          <label class="setting-label">${t.windowStyle}</label>
+          <div class="radio-group">
+          <div class="radio-option ${currentWindowStyle === "default" ? "selected" : ""}">
+          <input type="radio" name="windowStyle" value="default" id="style-default" ${currentWindowStyle === "default" ? "checked" : ""}>
+          <label for="style-default">${t.defaultStyle}</label>
+          </div>
+          <div class="radio-option ${currentWindowStyle === "windows" ? "selected" : ""}">
+          <input type="radio" name="windowStyle" value="windows" id="style-windows" ${currentWindowStyle === "windows" ? "checked" : ""}>
+          <label for="style-windows">${t.nativeStyle}</label>
+          </div>
+          </div>
+          </div>
+          </div>
+
+          <div class="section" id="developer">
+          <h2 class="section-title">${t.developerTitle}</h2>
+
+          <div class="setting-group">
+          <label class="setting-label">${t.experimental}</label>
+          <div class="checkbox-option">
+          <input type="checkbox" id="experimental-enabled" ${experimentalEnabled ? "checked" : ""}>
+          <label for="experimental-enabled">${t.enableExperimental}</label>
+          </div>
+          <div class="warning">
+          <div class="warning-content">
+          <p>${t.experimentalWarning}</p>
+          </div>
+          </div>
+          </div>
+
+          <div class="setting-group">
+          <div class="warning">
+          <div class="warning-content">
+          <p><strong>${t.securityWarningTitle}</strong></p>
+          <p>${t.securityWarningText}</p>
+          <ul>
+          <li>${t.securityWarning1}</li>
+          <li>${t.securityWarning2}</li>
+          <li>${t.securityWarning3}</li>
+          </ul>
+          </div>
+          </div>
+          </div>
+          ${
+            experimentalEnabled
+            ? `
+            <div class="setting-group">
+            <label class="setting-label">Debug Mode</label>
+            <p style="color: #888; font-size: 13px;">Developer tools are enabled in experimental mode</p>
             </div>
+            `
+            : ""
+          }
           </div>
-          
-          <!-- Boutons -->
-          <div class="button-group">
-            <button class="btn-save" id="saveBtn">Enregistrer</button>
-            <button class="btn-cancel" id="cancelBtn">Annuler</button>
+
+          <div class="section" id="about">
+          <div class="about-content">
+          <h2 class="section-title">${t.aboutTitle}</h2>
+
+          <div class="version">${t.version}</div>
+
+          <div class="about-section">
+          <h3>${t.availableServices}</h3>
+          <ul class="services-list">
+          <li>Franime (franime.fr)</li>
+          <li>Anime-Sama (anime-sama.eu)</li>
+          <li>VoirAnime (voiranime.com)</li>
+          </ul>
           </div>
-        </div>
-        
-        <script>
-          const sidebarItems = document.querySelectorAll('.sidebar-item');
-          const contentSections = document.querySelectorAll('.content-section');
-          const serviceRadios = document.querySelectorAll('input[name="service"]');
-          const homeButtonRadios = document.querySelectorAll('input[name="homeButton"]');
-          const windowStyleRadios = document.querySelectorAll('input[name="windowStyle"]');
-          const saveBtn = document.getElementById('saveBtn');
-          const cancelBtn = document.getElementById('cancelBtn');
-          const resetBtn = document.getElementById('resetBtn');
-          const linkDoc = document.getElementById('link-doc');
-          const linkBug = document.getElementById('link-bug');
-          
-          // Load current preferences
-          window.electronAPI.getPreferences().then(prefs => {
-            // Ensure all radio buttons are correctly set based on loaded preferences
-            document.querySelector(\`input[name="homeButton"][value="\${prefs.homeButtonBehavior}"]\`).checked = true;
-            document.querySelector(\`input[name="windowStyle"][value="\${prefs.windowStyle}"]\`).checked = true;
-          });
-          
-          // Sidebar navigation
-          sidebarItems.forEach(item => {
+
+          <div class="about-section">
+          <p>${t.madeWith}</p>
+          <p style="margin-top: 10px; font-size: 12px; color: #888;">${t.disclaimer}</p>
+          </div>
+
+          <div class="about-section">
+          <h3>${t.usefulLinks}</h3>
+          <div class="links">
+          <a href="#" class="link-btn" onclick="openExternal('https://github.com/Zetsukae/streamix'); return false;">${t.documentation}</a>
+          <a href="#" class="link-btn" onclick="openExternal('https://github.com/Zetsukae/streamix/issues'); return false;">${t.reportBug}</a>
+          </div>
+          </div>
+          </div>
+          </div>
+
+          <div class="actions">
+          <button class="btn-primary" onclick="saveSettings()">${t.save}</button>
+          <button class="btn-secondary" onclick="closeSettings()">${t.cancel}</button>
+          </div>
+          </div>
+          </div>
+
+          <script>
+          document.querySelectorAll('.sidebar-item').forEach(item => {
             item.addEventListener('click', () => {
-              const section = item.getAttribute('data-section');
-              
-              sidebarItems.forEach(s => s.classList.remove('active'));
-              contentSections.forEach(s => s.classList.remove('active'));
-              
+              document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+              document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
               item.classList.add('active');
-              document.getElementById(section).classList.add('active');
+              document.getElementById(item.dataset.section).classList.add('active');
             });
-          });
-          
-          // Save preferences
-          saveBtn.addEventListener('click', () => {
-            const homeButtonValue = document.querySelector('input[name="homeButton"]:checked').value;
-            const windowStyleValue = document.querySelector('input[name="windowStyle"]:checked').value;
-            const serviceValue = document.querySelector('input[name="service"]:checked').value;
-            
-            window.electronAPI.savePreferences({
-              homeButtonBehavior: homeButtonValue,
-              windowStyle: windowStyleValue,
-              service: serviceValue
-            }).then(() => {
-              window.close();
-            });
-          });
-          
-          // Cancel
-          cancelBtn.addEventListener('click', () => {
-            window.close();
           });
 
-          // Reset application
-          resetBtn.addEventListener('click', () => {
-            if (confirm('Êtes-vous sûr de vouloir réinitialiser l\\'application ? Toutes vos préférences seront supprimées.')) {
-              window.electronAPI.resetApplication().then(() => {
-                // La fenêtre se fermera automatiquement lors du redémarrage
-              });
+          document.querySelectorAll('.radio-option input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+              const group = radio.closest('.radio-group');
+              group.querySelectorAll('.radio-option').forEach(opt => opt.classList.remove('selected'));
+              radio.closest('.radio-option').classList.add('selected');
+            });
+          });
+
+          const serviceRadio = document.getElementById('source-service');
+          const customRadio = document.getElementById('source-custom');
+          const serviceListContainer = document.getElementById('service-list-container');
+          const customUrlContainer = document.getElementById('custom-url-container');
+          const experimentalCheckbox = document.getElementById('experimental-enabled');
+          const sourceTypeGroup = document.getElementById('source-type-group');
+
+          function updateUIBasedOnExperimental() {
+            const isExperimental = experimentalCheckbox?.checked || false;
+
+            if (sourceTypeGroup) {
+              sourceTypeGroup.style.display = isExperimental ? 'block' : 'none';
             }
-          });
 
-          linkDoc.addEventListener('click', () => {
-            window.electronAPI.openExternalLink('https://github.com/Zetsukae/streamix');
-          });
+            if (!isExperimental) {
+              if (serviceListContainer) serviceListContainer.style.display = 'block';
+              if (customUrlContainer) customUrlContainer.style.display = 'none';
+              if (serviceRadio) serviceRadio.checked = true;
+            }
+          }
 
-          linkBug.addEventListener('click', () => {
-            window.electronAPI.openExternalLink('https://github.com/Zetsukae/streamix/issues');
-          });
-        </script>
-      </body>
-      </html>
-    `
+          if (experimentalCheckbox) {
+            experimentalCheckbox.addEventListener('change', updateUIBasedOnExperimental);
+          }
 
-    settingsWindow.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(settingsHtml))
+          if (serviceRadio && customRadio) {
+            serviceRadio.addEventListener('change', () => {
+              if (serviceListContainer) serviceListContainer.style.display = 'block';
+              if (customUrlContainer) customUrlContainer.style.display = 'none';
+            });
+
+              customRadio.addEventListener('change', () => {
+                if (serviceListContainer) serviceListContainer.style.display = 'none';
+                if (customUrlContainer) customUrlContainer.style.display = 'block';
+              });
+          }
+
+          async function saveSettings() {
+            const service = document.querySelector('input[name="service"]:checked')?.value || 'franime';
+            const windowStyle = document.querySelector('input[name="windowStyle"]:checked')?.value || 'default';
+            const experimentalEnabled = document.getElementById('experimental-enabled')?.checked || false;
+            const language = document.getElementById('language-select')?.value || 'fr';
+            const homeButtonBehavior = document.querySelector('input[name="homeButtonBehavior"]:checked')?.value || 'menu';
+
+            let sourceType = 'service';
+            let customUrl = '';
+
+            if (experimentalEnabled) {
+              sourceType = document.querySelector('input[name="sourceType"]:checked')?.value || 'service';
+              customUrl = document.getElementById('custom-url')?.value || '';
+            }
+
+            const oldExperimental = ${experimentalEnabled};
+            const oldLanguage = '${currentLang}';
+            const needsRestart = experimentalEnabled !== oldExperimental || language !== oldLanguage;
+
+            console.log('[v0] Saving settings:', { service, windowStyle, sourceType, customUrl, experimentalEnabled, language, homeButtonBehavior, needsRestart });
+
+            try {
+              await window.electronAPI.saveConfig({
+                service,
+                windowStyle,
+                sourceType,
+                customServiceUrl: customUrl,
+                experimentalEnabled,
+                language,
+                homeButtonBehavior // Add homeButtonBehavior to config
+              });
+
+              if (needsRestart) {
+                await window.electronAPI.restartApp();
+              } else {
+                await window.electronAPI.closeSettings();
+              }
+            } catch (error) {
+              console.error('[v0] Error saving settings:', error);
+              alert('Erreur lors de la sauvegarde des paramètres');
+            }
+          }
+
+          async function closeSettings() {
+            console.log('[v0] Closing settings window');
+            try {
+              await window.electronAPI.closeSettings();
+            } catch (error) {
+              console.error('[v0] Error closing settings:', error);
+            }
+          }
+
+          async function resetApp() {
+            if (confirm('${t.resetWarning.replace(/'/g, "\\'")}')) {
+              console.log('[v0] Resetting application');
+              try {
+                await window.electronAPI.resetApp();
+              } catch (error) {
+                console.error('[v0] Error resetting app:', error);
+              }
+            }
+          }
+
+          async function openExternal(url) {
+            console.log('[v0] Opening external URL:', url);
+            try {
+              await window.electronAPI.openExternal(url);
+            } catch (error) {
+              console.error('[v0] Error opening external URL:', error);
+            }
+          }
+
+          // Initialize UI state
+          updateUIBasedOnExperimental();
+          </script>
+          </body>
+          </html>
+          `)}`,
+    )
 
     settingsWindow.once("ready-to-show", () => {
       settingsWindow.show()
@@ -1283,6 +1732,81 @@ app.whenReady().then(() => {
     return preferences
   })
 
+  // IPC handlers for settings window
+  ipcMain.handle("close-settings", () => {
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.close()
+    }
+  })
+
+  ipcMain.handle("save-config", async (event, config) => {
+    store.set("config", config)
+
+    const configPath = path.join(app.getPath("userData"), "first-launch.json")
+    const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
+
+    let preferences = {}
+    if (fs.existsSync(preferencesPath)) {
+      preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
+    }
+    preferences.experimentalMode = config.experimentalEnabled || false
+    preferences.homeButtonBehavior = config.homeButtonBehavior || "menu"
+    preferences.windowStyle = config.windowStyle || "default"
+    fs.writeFileSync(preferencesPath, JSON.stringify(preferences, null, 2))
+
+    // Handle configuration file
+    if (config.sourceType === "custom" && config.customServiceUrl && config.experimentalEnabled) {
+      let fileConfig = {}
+      if (fs.existsSync(configPath)) {
+        fileConfig = JSON.parse(fs.readFileSync(configPath, "utf8"))
+      }
+      fileConfig.customUrl = config.customServiceUrl
+      fileConfig.customServiceUrl = config.customServiceUrl
+      fileConfig.sourceType = "custom"
+      fs.writeFileSync(configPath, JSON.stringify(fileConfig, null, 2))
+    } else if (config.service) {
+      let serviceUrl = "https://franime.fr/"
+
+      if (config.service === "animesama") {
+        serviceUrl = "https://anime-sama.eu/"
+      } else if (config.service === "voiranime") {
+        serviceUrl = "https://v6.voiranime.com/"
+      }
+
+      let fileConfig = {}
+      if (fs.existsSync(configPath)) {
+        fileConfig = JSON.parse(fs.readFileSync(configPath, "utf8"))
+      }
+      fileConfig.serviceUrl = serviceUrl
+      fileConfig.sourceType = "service"
+      if (!config.experimentalEnabled) {
+        delete fileConfig.customUrl
+        delete fileConfig.customServiceUrl
+      }
+      fs.writeFileSync(configPath, JSON.stringify(fileConfig, null, 2))
+    }
+
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.close()
+    }
+    setTimeout(() => {
+      app.relaunch()
+      app.exit(0)
+    }, 300)
+
+    return true
+  })
+
+  ipcMain.handle("restart-app", () => {
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.close()
+    }
+    setTimeout(() => {
+      app.relaunch()
+      app.exit(0)
+    }, 300)
+  })
+
   ipcMain.handle("save-preferences", async (event, preferences) => {
     const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
 
@@ -1293,24 +1817,45 @@ app.whenReady().then(() => {
 
     fs.writeFileSync(preferencesPath, JSON.stringify(preferences, null, 2))
 
-    if (preferences.service) {
-      const configPath = path.join(app.getPath("userData"), "first-launch.json")
+    const configPath = path.join(app.getPath("userData"), "first-launch.json")
+
+    if (preferences.experimentalMode && preferences.sourceType === "custom" && preferences.customUrl) {
+      let config = {}
+      if (fs.existsSync(configPath)) {
+        config = JSON.parse(fs.readFileSync(configPath, "utf8"))
+      }
+      config.customUrl = preferences.customUrl
+      config.sourceType = "custom"
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
+    } else if (preferences.service) {
       let serviceUrl = "https://franime.fr/"
 
       if (preferences.service === "animesama") {
-        serviceUrl = "https://anime-sama.org/"
+        serviceUrl = "https://anime-sama.eu/"
       } else if (preferences.service === "voiranime") {
         serviceUrl = "https://v6.voiranime.com/"
       }
 
-      fs.writeFileSync(configPath, JSON.stringify({ serviceUrl }, null, 2))
+      let config = {}
+      if (fs.existsSync(configPath)) {
+        config = JSON.parse(fs.readFileSync(configPath, "utf8"))
+      }
+      config.serviceUrl = serviceUrl
+      config.sourceType = "service"
+      if (!preferences.experimentalMode) {
+        delete config.customUrl
+      }
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
     }
 
-    if (oldPreferences.windowStyle !== preferences.windowStyle || preferences.service) {
+    if (
+      oldPreferences.windowStyle !== preferences.windowStyle ||
+      oldPreferences.experimentalMode !== preferences.experimentalMode ||
+      preferences.service
+    ) {
       if (settingsWindow && !settingsWindow.isDestroyed()) {
         settingsWindow.close()
       }
-      // Restart app after a short delay
       setTimeout(() => {
         app.relaunch()
         app.exit(0)
@@ -1350,7 +1895,9 @@ app.whenReady().then(() => {
     await shell.openExternal(url)
     return true
   })
-})
+}
+
+app.whenReady().then(initializeApp)
 
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
@@ -1367,4 +1914,78 @@ app.on("window-all-closed", () => {
 // Placeholder for trackHistory if it was meant to be kept
 function trackHistory(url) {
   // Implementation for tracking history
+}
+
+function createF1MenuScript(menuTexts) {
+  return `
+  try {
+    if (!window.openSettings) {
+      window.openSettings = async () => {
+        await window.electronAPI.openSettings();
+      };
+    }
+
+    let menu = document.getElementById('custom-menu');
+    if (menu) {
+      if (menu.style.display === 'none') {
+        menu.style.display = 'block';
+      } else {
+        menu.style.display = 'none';
+      }
+    } else {
+      menu = document.createElement('div');
+      menu.id = 'custom-menu';
+      menu.style.cssText = 'position:fixed;top:60px;left:20px;z-index:10002;background:rgba(30,30,30,0.95);backdrop-filter:blur(15px);border:1px solid #333;border-radius:8px;padding:8px 0;min-width:150px;box-shadow:0 8px 25px rgba(0,0,0,0.3);';
+
+      const currentUrl = window.location.href;
+      let homeUrl = 'https://franime.fr/';
+      if (currentUrl.includes('anime-sama.eu')) {
+        homeUrl = 'https://anime-sama.eu/';
+      } else if (currentUrl.includes('voiranime.com')) {
+        homeUrl = 'https://v6.voiranime.com/';
+      }
+
+      const items = [
+        {text: '${menuTexts.home}', action: function() { window.location.href = homeUrl; }},
+        {text: '${menuTexts.refresh}', action: function() { window.location.reload(); }},
+        {text: '${menuTexts.previous}', action: function() { window.history.back(); }},
+        {text: '${menuTexts.next}', action: function() { window.history.forward(); }},
+        {separator: true},
+        {text: '${menuTexts.settings}', action: function() { window.openSettings(); }}
+      ];
+
+      items.forEach(item => {
+        if (item.separator) {
+          const separator = document.createElement('div');
+          separator.style.cssText = 'height:1px;background:#444;margin:4px 8px;';
+          menu.appendChild(separator);
+        } else {
+          const button = document.createElement('button');
+          button.textContent = item.text;
+          button.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 16px;background:none;border:none;color:#e0e0e0;font-size:14px;cursor:pointer;transition:background 0.2s;';
+          button.onmouseover = () => button.style.background = 'rgba(255,255,255,0.1)';
+          button.onmouseout = () => button.style.background = 'none';
+          button.onclick = () => {
+            item.action();
+            menu.style.display = 'none';
+          };
+          menu.appendChild(button);
+        }
+      });
+
+      document.body.appendChild(menu);
+
+      setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+          if (!menu.contains(e.target)) {
+            menu.style.display = 'none';
+            document.removeEventListener('click', closeMenu);
+          }
+        }, {once: false});
+      }, 100);
+    }
+  } catch(error) {
+    console.error('[v0] Error creating F1 menu:', error);
+  }
+  `
 }
