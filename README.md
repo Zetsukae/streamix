@@ -13,20 +13,10 @@ Une application Electron dédiée pour regarder des animes sur plusieurs service
 ### Navigation et Contrôles
 - **Raccourcis clavier** :
   - `F1` : Afficher/cacher le menu de navigation
-  - `F2` : Afficher les informations "À propos"
-  - `F11` : Mode plein écran
-  - `Ctrl+R` : Actualiser la page
-  - `Ctrl+Shift+R` : Forcer le rechargement
-  - `Alt+←/→` : Navigation précédent/suivant
-  - `Ctrl+F1` : Réinitialiser l'application
-  - `Ctrl+H` : Retour à l'accueil
-  - `Ctrl+I` : Afficher l'historique
 
 ### Fonctionnalités Avancées
-- **Historique de visionnage** automatique des films et séries
 - **Gestion des sessions** avec sauvegarde des préférences
 - **Sécurité renforcée** avec navigation limitée aux domaines autorisés
-- **Menu contextuel** personnalisé avec clic droit
 - **Réinitialisation complète** des données utilisateur
 
 ### Compatibilité
@@ -34,7 +24,7 @@ Une application Electron dédiée pour regarder des animes sur plusieurs service
 - **Intégration système** avec notifications natives
 - **Gestion des liens externes** automatique
 
-## 📦 Installation
+## 📦 Installation - Pour FORK (seulement pour les Dev.)
 
 ### Prérequis
 - Node.js (version 16 ou supérieure)
@@ -69,6 +59,7 @@ npm run build:linux  # Linux
 streamix/
 ├── main.js          # Processus principal Electron
 ├── preload.js       # Script de préchargement sécurisé
+├── locales.js       # Pour les traductions 
 ├── package.json     # Configuration et dépendances
 ├── assets/          # Ressources (icônes, styles)
 │   ├── icon.ico     # Icône Windows
@@ -87,7 +78,6 @@ L'application limite la navigation aux domaines suivants :
 - `google.com` (pour l'authentification)
 
 ### Données Utilisateur
-- **Historique** : `~/.config/streamix/history.json`
 - **Configuration** : `~/.config/streamix/first-launch.json`
 - **Cache** : Géré automatiquement par Electron
 
