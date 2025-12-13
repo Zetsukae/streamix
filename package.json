@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "electron": "^33.0.0",
-    "electron-builder": "^24.0.0"
+    "electron-builder": "^24.13.3"
   },
   "build": {
     "appId": "com.streamix.app",
@@ -25,6 +25,7 @@
     },
     "files": [
       "main.js",
+      "locales.js",
       "preload.js",
       "assets/**/*"
     ],
