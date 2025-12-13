@@ -11,4 +11,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   resetApplication: () => ipcRenderer.invoke("reset-application"),
   openExternalLink: (url) => ipcRenderer.invoke("open-external-link", url),
   selectService: (config) => ipcRenderer.invoke("select-service", config),
+  closeSettings: () => ipcRenderer.invoke("close-settings"),
+  saveConfig: (config) => ipcRenderer.invoke("save-config", config),
+  resetApp: () => ipcRenderer.invoke("reset-application"),
+  restartApp: () => ipcRenderer.invoke("restart-app"),
+  openExternal: (url) => ipcRenderer.invoke("open-external-link", url),
 })
