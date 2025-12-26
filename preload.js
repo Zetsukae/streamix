@@ -16,4 +16,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   resetApp: () => ipcRenderer.invoke("reset-application"),
   restartApp: () => ipcRenderer.invoke("restart-app"),
   openExternal: (url) => ipcRenderer.invoke("open-external-link", url),
+  selectPluginFile: () => ipcRenderer.invoke("select-plugin-file"),
+  getPlugins: () => ipcRenderer.invoke("get-plugins"),
+  removePlugin: (pluginPath) => ipcRenderer.invoke("remove-plugin", pluginPath),
 })
