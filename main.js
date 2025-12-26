@@ -2,13 +2,15 @@ const { app, BrowserWindow, BrowserView, ipcMain, Menu, shell, dialog, Notificat
 const path = require("node:path")
 const fs = require("fs")
 const { locales, languageNames, f1MenuTranslations } = require("./locales")
+const { autoUpdater } = require("electron-updater")
+
+const loadedPlugins = []
 
 const Store = require("electron-store")
 let store
 
-// Initialize store after checking if it's a constructor or default export
 try {
-  store = new (Store.default || Store)()
+  store = new Store()
 } catch (error) {
   console.error("Error initializing electron-store:", error)
   // Fallback to basic file-based storage if electron-store fails
@@ -30,7 +32,7 @@ try {
         const configPath = path.join(app.getPath("userData"), "config.json")
         let config = {}
         if (fs.existsSync(configPath)) {
-          config = JSON.parse(fs.readFileSync(configPath, "utf8"))
+          config = JSON.JSON.parse(fs.readFileSync(configPath, "utf8"))
         }
         config[key] = value
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
@@ -54,24 +56,24 @@ async function checkForUpdates() {
 
     if (!data.tag_name) return
 
-      // Remove "v" prefix if present (e.g., v1.2.0 -> 1.2.0)
-      const latestVersion = data.tag_name.replace(/^v/, "")
+    // Remove "v" prefix if present (e.g., v1.2.0 -> 1.2.0)
+    const latestVersion = data.tag_name.replace(/^v/, "")
 
-      // Compare versions
-      if (latestVersion !== currentVersion) {
-        // Show a native notification
-        const notification = new Notification({
-          title: "Mise à jour disponible",
-          body: `Une nouvelle version de Streamix est disponible (v${latestVersion}). Cliquez pour télécharger.`,
-                                              icon: path.join(__dirname, "assets", "icon.png"),
-        })
+    // Compare versions
+    if (latestVersion !== currentVersion) {
+      // Show a native notification
+      const notification = new Notification({
+        title: "Mise à jour disponible",
+        body: `Une nouvelle version de Streamix est disponible (v${latestVersion}). Cliquez pour télécharger.`,
+        icon: path.join(__dirname, "assets", "icon.png"),
+      })
 
-        notification.on("click", () => {
-          shell.openExternal(data.html_url)
-        })
+      notification.on("click", () => {
+        shell.openExternal(data.html_url)
+      })
 
-        notification.show()
-      }
+      notification.show()
+    }
   } catch (error) {
     console.error("Erreur lors de la vérification des mises à jour:", error)
   }
@@ -93,16 +95,16 @@ function createWindow() {
     minWidth: 800,
     minHeight: 600,
     icon: path.join(__dirname, "assets", "icon.png"),
-                                 webPreferences: {
-                                   nodeIntegration: false,
-                                   contextIsolation: true,
-                                   webSecurity: true,
-                                   devTools: true,
-                                   preload: path.join(__dirname, "preload.js"),
-                                 },
-                                 show: false,
-                                 autoHideMenuBar: true,
-                                 frame: isWindowsStyle, // Appliquer la barre native si Windows style
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      webSecurity: true,
+      devTools: true,
+      preload: path.join(__dirname, "preload.js"),
+    },
+    show: false,
+    autoHideMenuBar: true,
+    frame: isWindowsStyle, // Appliquer la barre native si Windows style
   })
 
   const configPath = path.join(app.getPath("userData"), "first-launch.json")
@@ -117,8 +119,8 @@ function createWindow() {
     }
   } else {
     startUrl =
-    "data:text/html;charset=utf-8," +
-    encodeURIComponent(`
+      "data:text/html;charset=utf-8," +
+      encodeURIComponent(`
     <!DOCTYPE html>
     <html>
     <head>
@@ -261,7 +263,7 @@ function createWindow() {
       let serviceUrl = 'https://franime.fr/';
 
       if (service === 'animesama') {
-        serviceUrl = 'https://anime-sama.eu/';
+        serviceUrl = 'https://anime-sama.pw/';
       } else if (service === 'voiranime') {
         serviceUrl = 'https://v6.voiranime.com/';
       }
@@ -286,7 +288,7 @@ function createWindow() {
   })
 
   mainWindow.webContents.on("did-navigate", (event, url) => {
-    trackHistory(url)
+    // trackHistory(url)
   })
 
   mainWindow.webContents.on("did-finish-load", () => {
@@ -297,14 +299,14 @@ function createWindow() {
 
     const config = store.get("config", {})
     const currentService = config.service || "franime"
-    const isAnimeSama = currentUrl.includes("anime-sama.eu")
+    const isAnimeSama = currentUrl.includes("anime-sama.pw")
     const isVoirAnime = currentUrl.includes("voiranime.com")
     const isCustomUrl = config.sourceType === "custom" && config.customServiceUrl
 
     if ((currentService === "animesama" || isAnimeSama || isCustomUrl) && !isVoirAnime) {
       mainWindow.webContents
-      .executeJavaScript(
-        `
+        .executeJavaScript(
+          `
         const observer = new MutationObserver(() => {
           const header = document.querySelector('header, nav, .header, .navbar');
           if (header) {
@@ -354,7 +356,7 @@ function createWindow() {
           };
             document.body.appendChild(homeBtn);
 
-            if (window.location.href.includes('anime-sama.fr') || window.location.href.includes('anime-sama.eu')) {
+            if (window.location.hostname.includes('anime-sama')) {
               function adjustButtonPosition() {
                 const header = document.querySelector('header, nav, .header, .navbar');
                 const homeBtn = document.getElementById('streamix-home-btn');
@@ -388,13 +390,13 @@ function createWindow() {
             }
         }
         `,
-        true,
-      )
-      .catch(console.error)
+          true,
+        )
+        .catch(console.error)
     } else {
       mainWindow.webContents
-      .executeJavaScript(
-        `
+        .executeJavaScript(
+          `
         if (!document.getElementById('window-controls')) {
           const controls = document.createElement('div');
           controls.id = 'window-controls';
@@ -423,9 +425,9 @@ function createWindow() {
             document.body.appendChild(homeBtn);
         }
         `,
-        true,
-      )
-      .catch(console.error)
+          true,
+        )
+        .catch(console.error)
     }
   })
 
@@ -439,18 +441,18 @@ function createWindow() {
     const currentUrl = mainWindow.webContents.getURL()
     if (currentUrl.startsWith("data:text/html")) return
 
-      const showSearchBtn = currentUrl.includes("franime.fr")
+    const showSearchBtn = currentUrl.includes("franime.fr")
 
-      const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
-      let preferences = { windowStyle: "default" }
-      if (fs.existsSync(preferencesPath)) {
-        preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
-      }
-      const isWindowsStyle = preferences.windowStyle === "windows"
+    const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
+    let preferences = { windowStyle: "default" }
+    if (fs.existsSync(preferencesPath)) {
+      preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
+    }
+    const isWindowsStyle = preferences.windowStyle === "windows"
 
-      mainWindow.webContents
+    mainWindow.webContents
       .executeJavaScript(`
-      if (window.location.href.includes('anime-sama.fr') || window.location.href.includes('anime-sama.eu')) {
+      if (window.location.hostname.includes('anime-sama')) {
         document.body.setAttribute('data-anime-sama', 'true');
       }
 
@@ -471,7 +473,7 @@ function createWindow() {
         };
           document.body.appendChild(homeBtn);
 
-          if (window.location.href.includes('anime-sama.fr') || window.location.href.includes('anime-sama.eu')) {
+          if (window.location.hostname.includes('anime-sama')) {
             function adjustButtonPosition() {
               const header = document.querySelector('header, nav, .header, .navbar');
               const homeBtn = document.getElementById('streamix-home-btn');
@@ -554,8 +556,7 @@ function createWindow() {
     if (
       urlObj.hostname === "franime.fr" ||
       urlObj.hostname.endsWith(".franime.fr") ||
-      urlObj.hostname === "anime-sama.eu" ||
-      urlObj.hostname.endsWith(".anime-sama.eu") ||
+      urlObj.hostname.includes("anime-sama") ||
       urlObj.hostname === "v6.voiranime.com" ||
       urlObj.hostname.endsWith(".voiranime.com") ||
       urlObj.hostname.includes("discord.com") ||
@@ -564,7 +565,9 @@ function createWindow() {
       urlObj.hostname.includes("googleapis.com") ||
       urlObj.hostname.includes("accounts.google.com")
     ) {
-      return { action: "allow" }
+      // Navigate in the same window instead of opening a new one
+      mainWindow.loadURL(url)
+      return { action: "deny" }
     }
     shell.openExternal(url)
     return { action: "deny" }
@@ -587,8 +590,7 @@ function createWindow() {
     if (
       urlObj.hostname === "franime.fr" ||
       urlObj.hostname.endsWith(".franime.fr") ||
-      urlObj.hostname === "anime-sama.eu" ||
-      urlObj.hostname.endsWith(".anime-sama.eu") ||
+      urlObj.hostname.includes("anime-sama") ||
       urlObj.hostname === "v6.voiranime.com" ||
       urlObj.hostname.endsWith(".voiranime.com") ||
       urlObj.hostname.includes("discord.com") ||
@@ -597,6 +599,7 @@ function createWindow() {
       urlObj.hostname.includes("googleapis.com") ||
       urlObj.hostname.includes("accounts.google.com")
     ) {
+      // Allow navigation within the app
       return
     }
     event.preventDefault()
@@ -619,9 +622,83 @@ function createWindow() {
           quit: "Quitter",
         }
 
-        mainWindow.webContents.executeJavaScript(createF1MenuScript(menuTexts)).catch((err) => {
-          console.error("Error executing F1 menu:", err)
-        })
+        mainWindow.webContents
+          .executeJavaScript(
+            `
+          try {
+            if (!window.openSettings) {
+              window.openSettings = async () => {
+                await window.electronAPI.openSettings();
+              };
+            }
+
+            let menu = document.getElementById('custom-menu');
+            if (menu) {
+              if (menu.style.display === 'none') {
+                menu.style.display = 'block';
+              } else {
+                menu.style.display = 'none';
+              }
+            } else {
+              menu = document.createElement('div');
+              menu.id = 'custom-menu';
+              menu.style.cssText = 'position:fixed;top:60px;left:20px;z-index:10002;background:rgba(30,30,30,0.95);backdrop-filter:blur(15px);border:1px solid #333;border-radius:8px;padding:8px 0;min-width:150px;box-shadow:0 8px 25px rgba(0,0,0,0.3);';
+
+              const currentUrl = window.location.href;
+              let homeUrl = 'https://franime.fr/';
+              if (currentUrl.includes('anime-sama.pw')) {
+                homeUrl = 'https://anime-sama.pw/';
+              } else if (currentUrl.includes('voiranime.com')) {
+                homeUrl = 'https://v6.voiranime.com/';
+              }
+
+              const items = [
+                {text: '${menuTexts.home}', action: () => { window.location.href = homeUrl; }},
+                {text: '${menuTexts.refresh}', action: () => { window.location.reload(); }},
+                {text: '${menuTexts.previous}', action: () => { window.history.back(); }},
+                {text: '${menuTexts.next}', action: () => { window.history.forward(); }},
+                {separator: true},
+                {text: '${menuTexts.settings}', action: () => { window.openSettings(); }}
+              ];
+
+              items.forEach(item => {
+                if (item.separator) {
+                  const separator = document.createElement('div');
+                  separator.style.cssText = 'height:1px;background:#444;margin:4px 8px;';
+                  menu.appendChild(separator);
+                } else {
+                  const button = document.createElement('button');
+                  button.textContent = item.text;
+                  button.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 16px;background:none;border:none;color:#e0e0e0;font-size:14px;cursor:pointer;transition:background 0.2s;';
+                  button.onmouseover = () => button.style.background = 'rgba(255,255,255,0.1)';
+                  button.onmouseout = () => button.style.background = 'none';
+                  button.onclick = () => {
+                    item.action();
+                    menu.style.display = 'none';
+                  };
+                  menu.appendChild(button);
+                }
+              });
+
+              document.body.appendChild(menu);
+
+              setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                  if (!menu.contains(e.target)) {
+                    menu.style.display = 'none';
+                    document.removeEventListener('click', closeMenu);
+                  }
+                }, {once: false});
+              }, 100);
+            }
+          } catch(error) {
+            console.error('[v0] Error creating F1 menu:', error);
+          }
+        `,
+          )
+          .catch((err) => {
+            console.error("Error executing F1 menu:", err)
+          })
       }
       if (input.key.toLowerCase() === "f3") {
         event.preventDefault()
@@ -688,6 +765,52 @@ function createApplicationMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
 }
 
+function loadPlugins() {
+  const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
+  let preferences = { plugins: [] }
+
+  if (fs.existsSync(preferencesPath)) {
+    preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
+  }
+
+  if (!preferences.plugins || preferences.plugins.length === 0) {
+    return
+  }
+
+  loadedPlugins.length = 0
+
+  preferences.plugins.forEach((plugin) => {
+    if (!plugin.enabled) return
+
+    try {
+      console.log(`[Plugin] Loading plugin: ${plugin.name}`)
+
+      // Read and execute plugin file
+      const pluginCode = fs.readFileSync(plugin.path, "utf8")
+
+      // Create a safe context for the plugin
+      const pluginContext = {
+        app,
+        mainWindow: () => mainWindow,
+        ipcMain,
+        console,
+        path,
+        fs,
+      }
+
+      // Execute plugin in a function scope
+      const pluginFunction = new Function(...Object.keys(pluginContext), pluginCode)
+      pluginFunction(...Object.values(pluginContext))
+
+      loadedPlugins.push({ ...plugin, loaded: true })
+      console.log(`[Plugin] Successfully loaded: ${plugin.name}`)
+    } catch (error) {
+      console.error(`[Plugin] Failed to load ${plugin.name}:`, error)
+      loadedPlugins.push({ ...plugin, loaded: false, error: error.message })
+    }
+  })
+}
+
 async function initializeApp() {
   // Removed direct import of electron-store and initialization of store here
   // const StoreModule = await import("electron-store")
@@ -696,6 +819,8 @@ async function initializeApp() {
 
   createWindow()
   Menu.setApplicationMenu(null)
+
+  loadPlugins()
 
   setTimeout(() => {
     checkForUpdates()
@@ -791,8 +916,8 @@ async function initializeApp() {
 
             const currentUrl = window.location.href;
             let homeUrl = 'https://franime.fr/';
-            if (currentUrl.includes('anime-sama.eu')) {
-              homeUrl = 'https://anime-sama.eu/';
+            if (currentUrl.includes('anime-sama.pw')) {
+              homeUrl = 'https://anime-sama.pw/';
             } else if (currentUrl.includes('voiranime.com')) {
               homeUrl = 'https://v6.voiranime.com/';
             }
@@ -846,7 +971,7 @@ async function initializeApp() {
     const menuTexts = f1MenuTranslations[currentLang]
 
     mainWindow.webContents
-    .executeJavaScript(`
+      .executeJavaScript(`
     (function() {
       try {
         if (!window.openSettings) {
@@ -869,8 +994,8 @@ async function initializeApp() {
 
           const currentUrl = window.location.href;
           let homeUrl = 'https://franime.fr/';
-          if (currentUrl.includes('anime-sama.eu')) {
-            homeUrl = 'https://anime-sama.eu/';
+          if (currentUrl.includes('anime-sama.pw')) {
+            homeUrl = 'https://anime-sama.pw/';
           } else if (currentUrl.includes('voiranime.com')) {
             homeUrl = 'https://v6.voiranime.com/';
           }
@@ -912,7 +1037,7 @@ async function initializeApp() {
       }
     })();
     `)
-    .catch(console.error)
+      .catch(console.error)
   })
 
   ipcMain.handle("open-settings", async (event) => {
@@ -926,10 +1051,15 @@ async function initializeApp() {
     const t = locales[currentLang]
 
     const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
-    let preferences = { windowStyle: "default", homeButtonBehavior: "menu" }
+    let preferences = { windowStyle: "default", homeButtonBehavior: "menu", plugins: [] }
     if (fs.existsSync(preferencesPath)) {
       preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
     }
+
+    if (!preferences.plugins) {
+      preferences.plugins = []
+    }
+
     const currentHomeButtonBehavior = preferences.homeButtonBehavior || "menu"
 
     settingsWindow = new BrowserWindow({
@@ -1389,6 +1519,50 @@ async function initializeApp() {
         .hidden {
           display: none !important;
         }
+
+        .plugin-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px;
+          background: #1a1a1a;
+          border: 1px solid #2a2a2a;
+          border-radius: 6px;
+          margin-bottom: 8px;
+        }
+
+        .plugin-info {
+          flex: 1;
+        }
+
+        .plugin-name {
+          color: #e0e0e0;
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 4px;
+        }
+
+        .plugin-path {
+          color: #888;
+          font-size: 12px;
+          font-family: monospace;
+        }
+
+        .btn-danger-small {
+          padding: 6px 12px;
+          background: #dc2626;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          font-size: 13px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .btn-danger-small:hover {
+          background: #b91c1c;
+        }
+
         </style>
         </head>
         <body>
@@ -1396,6 +1570,7 @@ async function initializeApp() {
         <div class="sidebar">
         <div class="sidebar-item active" data-section="general">${t.general}</div>
         <div class="sidebar-item" data-section="customization">${t.customization}</div>
+        <div class="sidebar-item" data-section="plugins">${t.pluginsTitle}</div>
         <div class="sidebar-item" data-section="developer">${t.developerOptions}</div>
         <div class="sidebar-item" data-section="about">${t.about}</div>
         </div>
@@ -1436,7 +1611,7 @@ async function initializeApp() {
           </div>
           <div class="radio-option ${currentService === "animesama" ? "selected" : ""}">
           <input type="radio" name="service" value="animesama" id="service-animesama" ${currentService === "animesama" ? "checked" : ""}>
-          <label for="service-animesama">Anime-Sama (anime-sama.eu)</label>
+          <label for="service-animesama">Anime-Sama (anime-sama.pw)</label>
           </div>
           <div class="radio-option ${currentService === "voiranime" ? "selected" : ""}">
           <input type="radio" name="service" value="voiranime" id="service-voiranime" ${currentService === "voiranime" ? "checked" : ""}>
@@ -1498,6 +1673,42 @@ async function initializeApp() {
           </div>
           </div>
 
+          <div class="section" id="plugins">
+          <h2 class="section-title">${t.pluginsTitle}</h2>
+
+          <div class="setting-group">
+          <label class="setting-label">${t.installedPlugins}</label>
+          <div id="plugins-list" style="margin-top: 12px;">
+          ${
+            preferences.plugins && preferences.plugins.length > 0
+              ? preferences.plugins
+                  .map(
+                    (plugin, index) => `
+          <div class="plugin-item" data-plugin-path="${plugin.path}">
+            <div class="plugin-info">
+              <div class="plugin-name">${plugin.name || "Plugin"}</div>
+              <div class="plugin-path">${plugin.path}</div>
+            </div>
+            <button class="btn-danger-small remove-plugin-btn" data-plugin-path="${plugin.path}">${t.removePlugin}</button>
+          </div>
+        `,
+                  )
+                  .join("")
+              : `<p style="color: #888; font-size: 13px;">${t.noPlugins}</p>`
+          }
+          </div>
+          </div>
+
+          <div class="setting-group">
+          <button class="btn-primary" id="add-plugin-btn">${t.addPlugin}</button>
+          <div class="warning" style="margin-top: 12px;">
+          <div class="warning-content">
+          <p><strong>⚠️</strong> ${t.pluginWarning}</p>
+          </div>
+          </div>
+          </div>
+          </div>
+
           <div class="section" id="developer">
           <h2 class="section-title">${t.developerTitle}</h2>
 
@@ -1529,13 +1740,13 @@ async function initializeApp() {
           </div>
           ${
             experimentalEnabled
-            ? `
+              ? `
             <div class="setting-group">
             <label class="setting-label">Debug Mode</label>
             <p style="color: #888; font-size: 13px;">Developer tools are enabled in experimental mode</p>
             </div>
             `
-            : ""
+              : ""
           }
           </div>
 
@@ -1549,7 +1760,7 @@ async function initializeApp() {
           <h3>${t.availableServices}</h3>
           <ul class="services-list">
           <li>Franime (franime.fr)</li>
-          <li>Anime-Sama (anime-sama.eu)</li>
+          <li>Anime-Sama (anime-sama.pw)</li>
           <li>VoirAnime (voiranime.com)</li>
           </ul>
           </div>
@@ -1570,18 +1781,169 @@ async function initializeApp() {
           </div>
 
           <div class="actions">
-          <button class="btn-primary" onclick="saveSettings()">${t.save}</button>
-          <button class="btn-secondary" onclick="closeSettings()">${t.cancel}</button>
+          <button class="btn-primary" id="save-settings-btn">${t.save}</button>
+          <button class="btn-secondary" id="close-settings-btn">${t.cancel}</button>
           </div>
           </div>
           </div>
 
           <script>
+          // Define translations first
+          window.t = {
+            removePlugin: '${t.removePlugin}',
+            noPlugins: '${t.noPlugins}',
+            pluginRemoveError: '${t.pluginRemoveError}',
+            confirmRemove: '${t.confirmRemove || "Confirmer la suppression"}'
+          };
+          
+          // Define all functions first
+          async function saveSettings() {
+            const service = document.querySelector('input[name="service"]:checked')?.value || 'franime';
+            const windowStyle = document.querySelector('input[name="windowStyle"]:checked')?.value || 'default';
+            const experimentalEnabled = document.getElementById('experimental-enabled')?.checked || false;
+            const language = document.getElementById('language-select')?.value || 'fr';
+            const homeButtonBehavior = document.querySelector('input[name="homeButtonBehavior"]:checked')?.value || 'menu';
+
+            let sourceType = 'service';
+            let customUrl = '';
+
+            if (experimentalEnabled) {
+              sourceType = document.querySelector('input[name="sourceType"]:checked')?.value || 'service';
+              customUrl = document.getElementById('custom-url')?.value || '';
+            }
+
+            const oldExperimental = ${experimentalEnabled};
+            const oldLanguage = '${currentLang}';
+            const needsRestart = experimentalEnabled !== oldExperimental || language !== oldLanguage;
+
+            try {
+              await window.electronAPI.saveConfig({
+                service,
+                windowStyle,
+                sourceType,
+                customServiceUrl: customUrl,
+                experimentalEnabled,
+                language,
+                homeButtonBehavior
+              });
+
+              if (needsRestart) {
+                await window.electronAPI.restartApp();
+              } else {
+                await window.electronAPI.closeSettings();
+              }
+            } catch (error) {
+              console.error('[v0] Error saving settings:', error);
+              alert('Erreur lors de la sauvegarde des paramètres');
+            }
+          }
+
+          async function closeSettings() {
+            try {
+              await window.electronAPI.closeSettings();
+            } catch (error) {
+              console.error('[v0] Error closing settings:', error);
+            }
+          }
+
+          async function resetApp() {
+            if (confirm('${t.resetWarning.replace(/'/g, "\\'")}')) {
+              try {
+                await window.electronAPI.resetApp();
+              } catch (error) {
+                console.error('[v0] Error resetting app:', error);
+              }
+            }
+          }
+
+          async function openExternal(url) {
+            try {
+              await window.electronAPI.openExternal(url);
+            } catch (error) {
+              console.error('[v0] Error opening external URL:', error);
+            }
+          }
+
+          function updateUIBasedOnExperimental() {
+            const experimentalCheckbox = document.getElementById('experimental-enabled');
+            const serviceRadio = document.getElementById('source-service');
+            const customRadio = document.getElementById('source-custom');
+            const serviceListContainer = document.getElementById('service-list-container');
+            const customUrlContainer = document.getElementById('custom-url-container');
+            const sourceTypeGroup = document.getElementById('source-type-group');
+            
+            const isExperimental = experimentalCheckbox?.checked || false;
+
+            if (sourceTypeGroup) {
+              sourceTypeGroup.style.display = isExperimental ? 'block' : 'none';
+            }
+
+            if (!isExperimental) {
+              if (serviceListContainer) serviceListContainer.style.display = 'block';
+              if (customUrlContainer) customUrlContainer.style.display = 'none';
+              if (serviceRadio) serviceRadio.checked = true;
+            } else {
+              if (customRadio && customRadio.checked) {
+                if (serviceListContainer) serviceListContainer.style.display = 'none';
+                if (customUrlContainer) customUrlContainer.style.display = 'block';
+              } else {
+                if (serviceListContainer) serviceListContainer.style.display = 'block';
+                if (customUrlContainer) customUrlContainer.style.display = 'none';
+              }
+            }
+          }
+
+          const handleRemovePluginClick = async (event) => {
+            const btn = event.target;
+            const pluginPath = btn.dataset.pluginPath;
+            if (!pluginPath) {
+              console.error('[v0] Plugin path not found for removal');
+              return;
+            }
+            
+            const confirmed = confirm(window.t.removePlugin + '?\\n\\n' + pluginPath);
+            if (!confirmed) {
+              return;
+            }
+            
+            const pluginItem = btn.closest('.plugin-item');
+            if (pluginItem) {
+              pluginItem.style.opacity = '0.5';
+              pluginItem.style.pointerEvents = 'none';
+            }
+            
+            try {
+              const result = await window.electronAPI.removePlugin(pluginPath);
+              if (result.success) {
+                if (pluginItem) {
+                  pluginItem.remove();
+                }
+                const pluginsList = document.getElementById('plugins-list');
+                if (pluginsList && pluginsList.children.length === 0) {
+                  pluginsList.innerHTML = '<p style="color: #888; font-size: 13px;">' + window.t.noPlugins + '</p>';
+                }
+              } else {
+                if (pluginItem) {
+                  pluginItem.style.opacity = '1';
+                  pluginItem.style.pointerEvents = 'auto';
+                }
+                alert(result.error || window.t.pluginRemoveError);
+              }
+            } catch (error) {
+              console.error('[v0] Error removing plugin:', error);
+              if (pluginItem) {
+                pluginItem.style.opacity = '1';
+                pluginItem.style.pointerEvents = 'auto';
+              }
+              alert(window.t.pluginRemoveError);
+            }
+          };
+
+          // Now set up all event listeners
           document.querySelectorAll('.sidebar-item').forEach(item => {
             item.addEventListener('click', () => {
               document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
               document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-
               item.classList.add('active');
               document.getElementById(item.dataset.section).classList.add('active');
             });
@@ -1602,20 +1964,6 @@ async function initializeApp() {
           const experimentalCheckbox = document.getElementById('experimental-enabled');
           const sourceTypeGroup = document.getElementById('source-type-group');
 
-          function updateUIBasedOnExperimental() {
-            const isExperimental = experimentalCheckbox?.checked || false;
-
-            if (sourceTypeGroup) {
-              sourceTypeGroup.style.display = isExperimental ? 'block' : 'none';
-            }
-
-            if (!isExperimental) {
-              if (serviceListContainer) serviceListContainer.style.display = 'block';
-              if (customUrlContainer) customUrlContainer.style.display = 'none';
-              if (serviceRadio) serviceRadio.checked = true;
-            }
-          }
-
           if (experimentalCheckbox) {
             experimentalCheckbox.addEventListener('change', updateUIBasedOnExperimental);
           }
@@ -1626,83 +1974,44 @@ async function initializeApp() {
               if (customUrlContainer) customUrlContainer.style.display = 'none';
             });
 
-              customRadio.addEventListener('change', () => {
-                if (serviceListContainer) serviceListContainer.style.display = 'none';
-                if (customUrlContainer) customUrlContainer.style.display = 'block';
-              });
+            customRadio.addEventListener('change', () => {
+              if (serviceListContainer) serviceListContainer.style.display = 'none';
+              if (customUrlContainer) customUrlContainer.style.display = 'block';
+            });
           }
 
-          async function saveSettings() {
-            const service = document.querySelector('input[name="service"]:checked')?.value || 'franime';
-            const windowStyle = document.querySelector('input[name="windowStyle"]:checked')?.value || 'default';
-            const experimentalEnabled = document.getElementById('experimental-enabled')?.checked || false;
-            const language = document.getElementById('language-select')?.value || 'fr';
-            const homeButtonBehavior = document.querySelector('input[name="homeButtonBehavior"]:checked')?.value || 'menu';
-
-            let sourceType = 'service';
-            let customUrl = '';
-
-            if (experimentalEnabled) {
-              sourceType = document.querySelector('input[name="sourceType"]:checked')?.value || 'service';
-              customUrl = document.getElementById('custom-url')?.value || '';
-            }
-
-            const oldExperimental = ${experimentalEnabled};
-            const oldLanguage = '${currentLang}';
-            const needsRestart = experimentalEnabled !== oldExperimental || language !== oldLanguage;
-
-            console.log('[v0] Saving settings:', { service, windowStyle, sourceType, customUrl, experimentalEnabled, language, homeButtonBehavior, needsRestart });
-
+          document.getElementById('add-plugin-btn')?.addEventListener('click', async () => {
             try {
-              await window.electronAPI.saveConfig({
-                service,
-                windowStyle,
-                sourceType,
-                customServiceUrl: customUrl,
-                experimentalEnabled,
-                language,
-                homeButtonBehavior // Add homeButtonBehavior to config
-              });
+              const result = await window.electronAPI.selectPluginFile();
+              if (result.success) {
+                const pluginsList = document.getElementById('plugins-list');
+                if (pluginsList.querySelector('p')) {
+                  pluginsList.innerHTML = '';
+                }
 
-              if (needsRestart) {
-                await window.electronAPI.restartApp();
+                const pluginItem = document.createElement('div');
+                pluginItem.className = 'plugin-item';
+                pluginItem.dataset.pluginPath = result.plugin.path;
+                pluginItem.innerHTML = '<div class="plugin-info"><div class="plugin-name">' + result.plugin.name + '</div><div class="plugin-path">' + result.plugin.path + '</div></div><button class="btn-danger-small remove-plugin-btn" data-plugin-path="' + result.plugin.path + '">' + result.translations.removePlugin + '</button>';
+                pluginsList.appendChild(pluginItem);
+
+                const removeButton = pluginItem.querySelector('.remove-plugin-btn');
+                removeButton.addEventListener('click', handleRemovePluginClick);
               } else {
-                await window.electronAPI.closeSettings();
+                alert(result.error || 'Erreur lors de la sélection du fichier.');
               }
             } catch (error) {
-              console.error('[v0] Error saving settings:', error);
-              alert('Erreur lors de la sauvegarde des paramètres');
+              console.error('[v0] Error adding plugin:', error);
+              alert('Erreur lors de l\\'ajout du plugin');
             }
-          }
+          });
 
-          async function closeSettings() {
-            console.log('[v0] Closing settings window');
-            try {
-              await window.electronAPI.closeSettings();
-            } catch (error) {
-              console.error('[v0] Error closing settings:', error);
-            }
-          }
+          document.querySelectorAll('.remove-plugin-btn').forEach(btn => {
+            btn.addEventListener('click', handleRemovePluginClick);
+          });
 
-          async function resetApp() {
-            if (confirm('${t.resetWarning.replace(/'/g, "\\'")}')) {
-              console.log('[v0] Resetting application');
-              try {
-                await window.electronAPI.resetApp();
-              } catch (error) {
-                console.error('[v0] Error resetting app:', error);
-              }
-            }
-          }
-
-          async function openExternal(url) {
-            console.log('[v0] Opening external URL:', url);
-            try {
-              await window.electronAPI.openExternal(url);
-            } catch (error) {
-              console.error('[v0] Error opening external URL:', error);
-            }
-          }
+          document.getElementById('save-settings-btn')?.addEventListener('click', saveSettings);
+          document.getElementById('close-settings-btn')?.addEventListener('click', closeSettings);
 
           // Initialize UI state
           updateUIBasedOnExperimental();
@@ -1723,7 +2032,7 @@ async function initializeApp() {
 
   ipcMain.handle("get-preferences", async (event) => {
     const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
-    let preferences = { windowStyle: "default", homeButtonBehavior: "menu" }
+    let preferences = { windowStyle: "default", homeButtonBehavior: "menu", plugins: [] }
 
     if (fs.existsSync(preferencesPath)) {
       preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
@@ -1737,6 +2046,95 @@ async function initializeApp() {
     if (settingsWindow && !settingsWindow.isDestroyed()) {
       settingsWindow.close()
     }
+  })
+
+  ipcMain.handle("select-plugin-file", async (event) => {
+    const config = store.get("config", {})
+    const currentLang = config.language || "fr"
+    const t = locales[currentLang]
+
+    const result = await dialog.showOpenDialog(settingsWindow, {
+      title: "Sélectionner un plugin",
+      filters: [{ name: "JavaScript Files", extensions: ["js"] }],
+      properties: ["openFile"],
+    })
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { success: false }
+    }
+
+    const pluginPath = result.filePaths[0]
+    const pluginName = path.basename(pluginPath, ".js")
+
+    // Load plugin metadata
+    const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
+    let preferences = { windowStyle: "default", homeButtonBehavior: "menu", plugins: [] }
+
+    if (fs.existsSync(preferencesPath)) {
+      preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
+    }
+
+    if (!preferences.plugins) {
+      preferences.plugins = []
+    }
+
+    // Check if plugin already exists
+    const existingPlugin = preferences.plugins.find((p) => p.path === pluginPath)
+    if (existingPlugin) {
+      return { success: false, error: t.pluginAlreadyInstalled }
+    }
+
+    // Add plugin to preferences
+    const newPlugin = {
+      name: pluginName,
+      path: pluginPath,
+      enabled: true,
+    }
+
+    preferences.plugins.push(newPlugin)
+
+    fs.writeFileSync(preferencesPath, JSON.stringify(preferences, null, 2))
+
+    loadPlugins()
+
+    return { success: true, plugin: newPlugin, translations: t }
+  })
+
+  ipcMain.handle("remove-plugin", async (event, pluginPath) => {
+    const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
+    let preferences = { windowStyle: "default", homeButtonBehavior: "menu", plugins: [] }
+
+    if (fs.existsSync(preferencesPath)) {
+      preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
+    }
+
+    if (!preferences.plugins) {
+      preferences.plugins = []
+    }
+
+    const pluginIndex = preferences.plugins.findIndex((p) => p.path === pluginPath)
+
+    if (pluginIndex >= 0) {
+      preferences.plugins.splice(pluginIndex, 1)
+      fs.writeFileSync(preferencesPath, JSON.stringify(preferences, null, 2))
+
+      loadPlugins()
+
+      return { success: true }
+    }
+
+    return { success: false, error: "Plugin not found" }
+  })
+
+  ipcMain.handle("get-plugins", async () => {
+    const preferencesPath = path.join(app.getPath("userData"), "preferences.json")
+    let preferences = { plugins: [] }
+
+    if (fs.existsSync(preferencesPath)) {
+      preferences = JSON.parse(fs.readFileSync(preferencesPath, "utf8"))
+    }
+
+    return preferences.plugins || []
   })
 
   ipcMain.handle("save-config", async (event, config) => {
@@ -1768,7 +2166,7 @@ async function initializeApp() {
       let serviceUrl = "https://franime.fr/"
 
       if (config.service === "animesama") {
-        serviceUrl = "https://anime-sama.eu/"
+        serviceUrl = "https://anime-sama.pw/"
       } else if (config.service === "voiranime") {
         serviceUrl = "https://v6.voiranime.com/"
       }
@@ -1831,7 +2229,7 @@ async function initializeApp() {
       let serviceUrl = "https://franime.fr/"
 
       if (preferences.service === "animesama") {
-        serviceUrl = "https://anime-sama.eu/"
+        serviceUrl = "https://anime-sama.pw/"
       } else if (preferences.service === "voiranime") {
         serviceUrl = "https://v6.voiranime.com/"
       }
@@ -1919,10 +2317,9 @@ function trackHistory(url) {
 function createF1MenuScript(menuTexts) {
   return `
   try {
-    if (!window.openSettings) {
-      window.openSettings = async () => {
+    if (!window.openSettings) {\
+      window.openSettings = async () => 
         await window.electronAPI.openSettings();
-      };
     }
 
     let menu = document.getElementById('custom-menu');
@@ -1939,19 +2336,19 @@ function createF1MenuScript(menuTexts) {
 
       const currentUrl = window.location.href;
       let homeUrl = 'https://franime.fr/';
-      if (currentUrl.includes('anime-sama.eu')) {
-        homeUrl = 'https://anime-sama.eu/';
+      if (currentUrl.includes('anime-sama.pw')) {
+        homeUrl = 'https://anime-sama.pw/';
       } else if (currentUrl.includes('voiranime.com')) {
         homeUrl = 'https://v6.voiranime.com/';
       }
 
       const items = [
-        {text: '${menuTexts.home}', action: function() { window.location.href = homeUrl; }},
-        {text: '${menuTexts.refresh}', action: function() { window.location.reload(); }},
-        {text: '${menuTexts.previous}', action: function() { window.history.back(); }},
-        {text: '${menuTexts.next}', action: function() { window.history.forward(); }},
+        {text: '${menuTexts.home}', action: () => { window.location.href = homeUrl; }},
+        {text: '${menuTexts.refresh}', action: () => { window.location.reload(); }},
+        {text: '${menuTexts.previous}', action: () => { window.history.back(); }},
+        {text: '${menuTexts.next}', action: () => { window.history.forward(); }},
         {separator: true},
-        {text: '${menuTexts.settings}', action: function() { window.openSettings(); }}
+        {text: '${menuTexts.settings}', action: () => { window.openSettings(); }}
       ];
 
       items.forEach(item => {
