@@ -135,7 +135,8 @@ L'application vérifie automatiquement les mises à jour au démarrage. Les nouv
 
 ## ⚠️ Avertissement légal
 
-Streamix est un logiciel open-source fourni à titre éducatif et pour des usages légaux.
-Nous **ne sommes pas responsables** de l’utilisation du logiciel pour accéder à des contenus protégés par le droit d’auteur.
+Streamix est un logiciel open source agissant comme un client de navigation et de lecture de flux provenant de sites tiers.
 
-L’utilisateur doit s’assurer que tout flux ou contenu qu’il regarde via Streamix respecte la législation locale et les droits des créateurs.
+Streamix ne détient, n’héberge, ne distribue ni ne contrôle aucun contenu audiovisuel. Les sources accessibles via l’application sont des services externes indépendants.
+
+La présence de liens ou d’accès à des sites tiers ne constitue pas une approbation de leur contenu. L’utilisateur est seul responsable de l’utilisation qu’il fait du logiciel et doit s’assurer que les sites et contenus consultés respectent la législation en vigueur dans son pays.
