@@ -26,13 +26,55 @@ body {
   min-height: 100vh;
   line-height: 1.5;
   font-size: 14px;
+  position: relative;
+  overflow-x: hidden;
 }
 
-/* Main simplifié */
+/* Styles pour les bulles animées */
+.bubbles-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bubble {
+  position: absolute;
+  bottom: -100px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(88, 166, 255, 0.15), rgba(88, 166, 255, 0.05));
+  border: 1px solid rgba(88, 166, 255, 0.1);
+  animation: rise linear infinite;
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-110vh) translateX(20px);
+    opacity: 0;
+  }
+}
+
+/* Main simplifié - z-index pour être au-dessus des bulles */
 .main {
   max-width: 1012px;
   margin: 0 auto;
   padding: 2rem 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* Hero style GitHub - sobre, sans gradient */
@@ -285,10 +327,13 @@ body {
   opacity: 0.4;
 }
 
-/* Footer style GitHub */
+/* Footer style GitHub - z-index pour être au-dessus des bulles */
 .footer {
   border-top: 1px solid var(--border);
   margin-top: 3rem;
+  position: relative;
+  z-index: 1;
+  background: var(--bg-primary);
 }
 
 .footer-content {
