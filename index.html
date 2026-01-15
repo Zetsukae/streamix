@@ -3,118 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Streamix - Sources</title>
+    <title>Streamix - Application de Streaming Open Source</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Ajout du container pour les bulles animées -->
+    <!-- Container pour les bulles animées -->
     <div class="bubbles-container" id="bubbles"></div>
 
-    <!-- Header supprimé -->
+    <!-- Header / Navigation -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 8L12 4L20 8V16L12 20L4 16V8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 4V20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M4 8L12 12L20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="logo-text">Streamix</span>
+            </div>
+            <nav class="nav">
+                <a href="#features" class="nav-link">Fonctionnalités</a>
+                <a href="#download" class="nav-link">Télécharger</a>
+                <a href="sources.html" class="nav-link">Sources</a>
+                <a href="https://github.com/Zetsukae/streamix" target="_blank" class="nav-link nav-link-github">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" fill="currentColor"/>
+                    </svg>
+                    GitHub
+                </a>
+            </nav>
+        </div>
+    </header>
 
     <main class="main">
+        <!-- Hero Section -->
         <section class="hero">
-            <h1 class="hero-title">Sources Streamix</h1>
-            <p class="hero-subtitle">Découvrez toutes les sources disponibles pour votre application</p>
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                Open Source
+            </div>
+            <h1 class="hero-title">Streamix</h1>
+            <p class="hero-subtitle">L'application de streaming libre et open source.<br>Regardez vos contenus préférés en toute simplicité.</p>
+            
+            <div class="hero-actions">
+                <a href="https://github.com/Zetsukae/streamix/releases/tag/Streamix-1.3.0-BETA" target="_blank" class="btn btn-primary btn-large">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Télécharger la dernière version
+                </a>
+                <a href="https://github.com/Zetsukae/streamix" target="_blank" class="btn btn-secondary btn-large">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" fill="currentColor"/>
+                    </svg>
+                    Voir sur GitHub
+                </a>
+            </div>
+
+            <div class="hero-version">
+                <span class="version-tag">v1.3.0-BETA</span>
+                <span class="version-text">Dernière version disponible</span>
+            </div>
         </section>
 
-        <section class="sources-container">
-            <h2 class="section-title">Sources Disponibles</h2>
-            
-            <div class="sources-grid">
-                <!-- Source Card: VOSTFR Anime -->
-                <div class="source-card">
-                    <div class="card-image">
-                        <!-- Remplacement de l'image locale par l'URL imgur -->
-                        <img src="https://i.imgur.com/YqYKvok.jpeg" alt="VOSTFR Anime">
-                        <div class="card-overlay"></div>
-                        <span class="card-badge">Anime</span>
+        <!-- Features Section -->
+        <section class="features" id="features">
+            <h2 class="section-title">Fonctionnalités</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
                     </div>
-                    <div class="card-content">
-                        <!-- Ajout icône certification à côté du titre -->
-                        <div class="card-title-row">
-                            <h3 class="card-title">VOSTFR Anime</h3>
-                            <div class="verified-badge" data-tooltip="Source stable et Vérifiée, coup de cœur des devs.">
-                                <svg class="verified-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                        </div>
-                        <p class="card-description">Accédez à une large collection d'animes en version originale sous-titrée français.</p>
-                        
-                        <div class="card-creator">
-                            <span class="creator-label">Créateur:</span>
-                            <span class="creator-name">Zetsukae</span>
-                            <div class="verified-badge creator-verified" data-tooltip="Développeur vérifié">
-                                <svg class="verified-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                        </div>
+                    <h3 class="feature-title">Rapide</h3>
+                    <p class="feature-description">Interface fluide et réactive pour une expérience de streaming optimale.</p>
+                </div>
 
-                        <div class="card-actions">
-                            <!-- URL mise à jour -->
-                            <button class="btn btn-primary" onclick="showWarningModal('https://usefull-website-for-api.github.io/api_9YHGU0IhF7u78GYHFoIYHgF0UYG9H7FhYIUGF0H9u78GYHFYUGI0hF7HGU9YFg0IhU0YHGF7U9hYUG0F78HGU9IYHGFu0hYF/')">
-                                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M8 5H6C4.89543 5 4 5.89543 4 7V19C4 20.1046 4.89543 21 6 21H16C17.1046 21 18 20.1046 18 19V18M8 5C8 6.10457 8.89543 7 10 7H12C13.1046 7 14 6.10457 14 5M8 5C8 3.89543 8.89543 3 10 3H12C13.1046 3 14 3.89543 14 5M14 5H16C17.1046 5 18 5.89543 18 7V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                                Copier l'url
-                            </button>
-                            <a href="https://github.com/Zetsukae/streamix" target="_blank" class="btn btn-secondary">
-                                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" fill="currentColor"/>
-                                </svg>
-                                GitHub
-                            </a>
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Multi-Sources</h3>
+                    <p class="feature-description">Ajoutez et gérez plusieurs sources de contenu facilement.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Sécurisé</h3>
+                    <p class="feature-description">Votre vie privée est respectée, aucune donnée collectée.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                            <path d="M8 21H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M12 17V21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Multi-Plateforme</h3>
+                    <p class="feature-description">Disponible sur Windows, macOS et Linux.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Open Source</h3>
+                    <p class="feature-description">Code source ouvert et transparent sur GitHub.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrapper">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">100% Gratuit</h3>
+                    <p class="feature-description">Aucun abonnement, aucune publicité, totalement gratuit.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Download Section -->
+        <section class="download" id="download">
+            <h2 class="section-title">Télécharger Streamix</h2>
+            <div class="download-card">
+                <div class="download-header">
+                    <div class="download-info">
+                        <h3 class="download-title">Streamix v1.3.0-BETA</h3>
+                        <p class="download-subtitle">Dernière version stable</p>
+                    </div>
+                    <span class="download-badge">BETA</span>
+                </div>
+                <div class="download-content">
+                    <p class="download-description">Téléchargez la dernière version de Streamix et profitez d'une expérience de streaming libre et open source.</p>
+                    <div class="download-platforms">
+                        <div class="platform-item">
+                            <svg class="platform-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 5.548l7.024-0.96v6.788H3V5.548zm0 12.904l7.024 0.96v-6.664H3v5.704zm7.89 1.088L21 21V13.24h-10.11v6.3zM21 11.376V3l-10.11 1.38v7h10.11z" fill="currentColor"/>
+                            </svg>
+                            <span>Windows</span>
+                        </div>
+                        <div class="platform-item">
+                            <svg class="platform-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z" fill="currentColor"/>
+                                <path d="M12 6a6 6 0 100 12 6 6 0 000-12z" fill="currentColor"/>
+                            </svg>
+                            <span>macOS</span>
+                        </div>
+                        <div class="platform-item">
+                            <svg class="platform-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12.504 0c-.155 0-.311.001-.466.004-.652.013-1.296.083-1.918.227-.622.145-1.217.373-1.765.678-.548.305-1.041.688-1.466 1.138-.425.45-.775.969-1.034 1.543-.259.574-.424 1.195-.484 1.843-.06.648-.014 1.32.142 1.976.156.656.413 1.278.768 1.83.355.552.804 1.03 1.334 1.408.53.378 1.139.647 1.79.81.651.163 1.34.215 2.024.153.684-.062 1.344-.239 1.945-.523a5.07 5.07 0 001.612-1.167c.446-.483.792-1.053 1.02-1.677.228-.624.333-1.293.31-1.967a5.108 5.108 0 00-.483-1.908 5.073 5.073 0 00-1.11-1.558 5.067 5.067 0 00-1.617-1.05 5.083 5.083 0 00-1.894-.463 6.924 6.924 0 00-.713-.016z" fill="currentColor"/>
+                            </svg>
+                            <span>Linux</span>
                         </div>
                     </div>
                 </div>
-
-                <!-- Placeholder for future sources -->
-                <div class="source-card source-card-placeholder">
-                    <div class="placeholder-content">
-                        <svg class="placeholder-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 6V12M12 12V18M12 12H18M12 12H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <div class="download-actions">
+                    <a href="https://github.com/Zetsukae/streamix/releases/tag/Streamix-1.3.0-BETA" target="_blank" class="btn btn-primary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span>Plus de sources à venir...</span>
-                    </div>
+                        Télécharger
+                    </a>
+                    <a href="https://github.com/Zetsukae/streamix/releases" target="_blank" class="btn btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 8V12L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Voir toutes les versions
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta">
+            <div class="cta-content">
+                <h2 class="cta-title">Prêt à commencer ?</h2>
+                <p class="cta-description">Rejoignez la communauté Streamix et profitez d'une expérience de streaming libre.</p>
+                <div class="cta-actions">
+                    <a href="https://github.com/Zetsukae/streamix/releases/tag/Streamix-1.3.0-BETA" target="_blank" class="btn btn-primary btn-large">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Télécharger maintenant
+                    </a>
                 </div>
             </div>
         </section>
     </main>
 
+    <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <p>&copy; 2026 Streamix. Tous droits réservés.</p>
-            <a href="https://github.com/Zetsukae/streamix" target="_blank" class="footer-link">GitHub</a>
+            <div class="footer-links">
+                <a href="sources.html" class="footer-link">Sources</a>
+                <a href="https://github.com/Zetsukae/streamix" target="_blank" class="footer-link">GitHub</a>
+            </div>
+            <p class="footer-copyright">&copy; 2026 Streamix. Tous droits réservés.</p>
         </div>
     </footer>
-
-    <!-- Toast notification -->
-    <div id="toast" class="toast">
-        <svg class="toast-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>URL copiée dans le presse-papier!</span>
-    </div>
-
-    <!-- Added warning modal before copying URL -->
-    <div id="warning-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <svg class="modal-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 9V13M12 17H12.01M5.07183 19H18.9282C20.4678 19 21.4301 17.3333 20.6603 16L13.7321 4C12.9623 2.66667 11.0377 2.66667 10.2679 4L3.33975 16C2.56995 17.3333 3.53223 19 5.07183 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <h3 class="modal-title">Avertissement</h3>
-            </div>
-            <p class="modal-text">En intégrant cette source dans l'application, vous acceptez que nous ne sommes <strong>pas responsables</strong> du contenu que vous regardez, accédez ou téléchargez via cette source.</p>
-            <p class="modal-text modal-text-secondary">Utilisez cette source de manière responsable et en conformité avec les lois en vigueur dans votre pays.</p>
-            <div class="modal-actions">
-                <button class="btn btn-secondary" onclick="closeWarningModal()">Annuler</button>
-                <button class="btn btn-primary" onclick="confirmCopy()">J'accepte et copier</button>
-            </div>
-        </div>
-    </div>
 
     <script src="script.js"></script>
 </body>
