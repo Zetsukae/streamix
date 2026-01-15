@@ -1,7 +1,8 @@
-let pendingUrl = ""
-
+// Création des bulles animées
 function createBubbles() {
   const container = document.getElementById("bubbles")
+  if (!container) return
+
   const bubbleCount = 15
 
   for (let i = 0; i < bubbleCount; i++) {
@@ -51,51 +52,7 @@ function createBubble(container) {
 // Initialiser les bulles au chargement
 document.addEventListener("DOMContentLoaded", createBubbles)
 
-function showWarningModal(url) {
-  pendingUrl = url
-  document.getElementById("warning-modal").classList.add("show")
-}
-
-function closeWarningModal() {
-  document.getElementById("warning-modal").classList.remove("show")
-  pendingUrl = ""
-}
-
-function confirmCopy() {
-  if (pendingUrl) {
-    copySource(pendingUrl)
-    closeWarningModal()
-  }
-}
-
-function copySource(url) {
-  navigator.clipboard
-    .writeText(url)
-    .then(() => {
-      showToast()
-    })
-    .catch((err) => {
-      console.error("Erreur lors de la copie:", err)
-      const textArea = document.createElement("textarea")
-      textArea.value = url
-      document.body.appendChild(textArea)
-      textArea.select()
-      document.execCommand("copy")
-      document.body.removeChild(textArea)
-      showToast()
-    })
-}
-
-function showToast() {
-  const toast = document.getElementById("toast")
-  toast.classList.add("show")
-
-  setTimeout(() => {
-    toast.classList.remove("show")
-  }, 3000)
-}
-
-// Add smooth scroll behavior
+// Smooth scroll pour les liens internes
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", function (e) {
     e.preventDefault()
@@ -103,6 +60,7 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
     if (target) {
       target.scrollIntoView({
         behavior: "smooth",
+        block: "start",
       })
     }
   })
