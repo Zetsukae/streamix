@@ -1,142 +1,122 @@
-# Streamix - Application de Streaming d'Animes
+# Streamix 📺
 
-Une application Electron dédiée pour regarder des animes sur plusieurs services avec une interface optimisée et des fonctionnalités avancées.
+> **L'expérience de streaming centralisée, sécurisée et immersive.**
 
-## 🚀 Fonctionnalités
+![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey?style=flat-square)
+![Status](https://img.shields.io/badge/status-Stable-success?style=flat-square)
 
-### Interface Utilisateur
-- **Fenêtre sans bordure** avec contrôles personnalisés (réduire/fermer)
-- **Boutons de navigation** intégrés (Accueil, Recherche)
-- **Menu contextuel F1** avec accès rapide aux fonctions principales
-- **Styles CSS personnalisés** pour masquer les éléments indésirables du site
+**Streamix** est une application de bureau open-source basée sur **Electron**. Elle permet de centraliser vos sources de streaming favorites (animes, séries) dans une interface unifiée, sécurisée et débarrassée des distractions habituelles des navigateurs web.
 
-### Navigation et Contrôles
-- **Raccourcis clavier** :
-  - `F1` : Afficher/cacher le menu de navigation
+---
 
-### Fonctionnalités Avancées
-- **Gestion des sessions** avec sauvegarde des préférences
-- **Sécurité renforcée** avec navigation limitée aux domaines autorisés
-- **Réinitialisation complète** des données utilisateur
+## 📥 Téléchargement
 
-### Compatibilité
-- **Multi-plateforme** : Windows, macOS (Prochainement), Linux
-- **Intégration système** avec notifications natives
-- **Gestion des liens externes** automatique
+Streamix est disponible pour **Windows** et **Linux**.
 
-## 📦 Installation - Pour FORK (seulement pour les Dev.)
+| Système | Type | Lien |
+| :--- | :--- | :--- |
+| **Windows** | Installeur `.exe` | [Bientôt disponible] |
+| **Linux** | Portable `.AppImage` | Disponible |
+
+> *Les liens de téléchargement de Windows peuvent être ajoutés quelques jours après Linux, regardez souvent l'onglet [Releases].*
+
+---
+
+## ✨ Fonctionnalités
+
+### 🔒 Sécurité Avancée
+* **Protection des Sources** : Utilisation d'un header unique (`X-Streamix-Key`) et d'une signature User-Agent (`StreamixApp`) pour restreindre l'accès aux sources.
+* **Navigation Sécurisée** : Restriction stricte aux domaines **GitHub Pages** (`.github.io`) pour éviter le chargement de scripts malveillants.
+* **Isolation** : Chaque source tourne dans un environnement sandboxé.
+
+### 🌍 Interface & Internationalisation
+* **Multilingue** : Interface entièrement traduite en **Français 🇫🇷, Anglais 🇺🇸, Espagnol 🇪🇸, Allemand 🇩🇪 et Japonais 🇯🇵**.
+* **Styles de Fenêtre** :
+  * **Immersif** : Fenêtre sans bordure, aux couleurs de l'application.
+  * **Natif** : Fenêtre standard de votre système d'exploitation.
+* **Animations** : Interface fluide avec animations CSS (désactivables).
+
+### 🎮 Expérience Utilisateur
+* **Menu Overlay (F1)** : Accès rapide aux fonctions (Accueil, Actualiser, Paramètres) via la touche `F1` ou le bouton flottant.
+* **Menu Contextuel** : Clic droit complet (Copier, Coller, Précédent, Suivant, Ouvrir dans le navigateur).
+* **Mode Cinéma** : Suppression automatique des distractions visuelles sur les sites supportés.
+
+---
+
+## 🛠️ Installation (Développement)
+
+Si vous souhaitez contribuer au projet ou compiler votre propre version.
 
 ### Prérequis
-- Node.js (version 16 ou supérieure)
-- npm ou yarn
+* **Node.js** (v16 ou supérieur)
+* **npm** ou **yarn**
 
-### Installation des dépendances
-```bash
+ 1. Cloner le projet
+```
+git clone [https://github.com/VOTRE_NOM/streamix.git](https://github.com/VOTRE_NOM/streamix.git)
+cd streamix
+```
+
+### 2. Installer les dépendances
+```
 npm install
 ```
 
-### Lancement en développement
-```bash
+### 3. Lancer en mode dev
+```
 npm start
-# ou
-npm run dev
 ```
 
-### Build de l'application
-```bash
-# Build pour toutes les plateformes
-npm run build
+### 4. Compiler l'application (Build)
+```
+# Pour Windows
+npm run build:win
 
-# Build spécifique
-npm run build:win    # Windows
-npm run build:mac    # macOS
-npm run build:linux  # Linux
+# Pour Linux
+npm run build:linux
 ```
 
-## 🛠️ Structure du Projet
+---
+
+## ⚙️ Structure Technique
 
 ```
 streamix/
-├── main.js          # Processus principal Electron
-├── preload.js       # Script de préchargement sécurisé
-├── locales.js       # Pour les traductions 
-├── package.json     # Configuration et dépendances
-├── assets/          # Ressources (icônes, styles)
-│   ├── icon.ico     # Icône Windows
-│   ├── icon.icns    # Icône macOS
-│   ├── icon.png     # Icône Linux
-│   └── style.css    # Styles personnalisés
-└── dist/           # Builds de production
+├── main.js          # Processus Principal (Sécurité, Fenêtres, IPC)
+├── preload.js       # Pont sécurisé (ContextBridge)
+├── contextMenu.js   # Gestion du menu clic droit
+├── locales.js       # Fichier de traductions (FR, EN, ES, DE, JA)
+├── settings.html    # Interface des paramètres
+├── setup.html       # Interface de premier lancement
+├── assets/          # Icônes et images
+└── dist/            # Dossier de sortie des builds
 ```
 
-## ⚙️ Configuration
+### Mécanisme de Sécurité
+L'application injecte automatiquement les éléments suivants dans les requêtes vers les sources :
+* **Header** : `X-Streamix-Key: zetsukaedagoat`
+* **User-Agent** : Ajout du suffixe `StreamixApp`
 
-### Domaines Autorisés
-L'application limite la navigation aux domaines suivants :
-- `franime.fr` et ses sous-domaines
-- `discord.com` (pour le support)
-- `google.com` (pour l'authentification)
+Cela permet aux développeurs de sources web de vérifier que la requête provient bien de l'application officielle tout en bloquant l'accès via un navigateur standard.
 
-### Données Utilisateur
-- **Configuration** : `~/.config/streamix/first-launch.json`
-- **Cache** : Géré automatiquement par Electron
+---
 
-## 🎯 Utilisation
+## ⚖️ Avertissement Légal
 
-1. **Premier lancement** : Message de bienvenue avec les raccourcis
-2. **Navigation** : Utilisez les boutons intégrés ou les raccourcis clavier
-3. **Menu F1** : Accès rapide aux fonctions principales
-4. **Historique** : Suivi automatique des contenus visionnés
-5. **Réinitialisation** : `Ctrl+F1` pour remettre à zéro
+**Streamix** est un logiciel open source agissant comme un **navigateur web spécialisé**.
 
-## 🔧 Développement
+* Streamix ne détient, n’héberge, ne distribue ni ne contrôle aucun contenu audiovisuel.
+* Les sources accessibles via l’application sont des services tiers indépendants.
+* L’utilisateur est seul responsable de l’utilisation qu’il fait du logiciel et doit s’assurer de respecter la législation en vigueur dans son pays concernant le droit d'auteur.
 
-### Technologies Utilisées
-- **Electron** : Framework d'application desktop
-- **Node.js** : Runtime JavaScript
-- **HTML/CSS/JS** : Interface utilisateur
+---
 
-### Scripts Disponibles
-- `npm start` : Lancement en mode développement
-- `npm run build` : Build pour toutes les plateformes
-- `npm run build:win` : Build Windows uniquement
-- `npm run build:mac` : Build macOS uniquement
-- `npm run build:linux` : Build Linux uniquement
+## ❤️ Crédits
 
-## 📝 Licence
+Projet imaginé et développé par **Zetsukae**.
 
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
-
-## 👥 Équipe
-
-Développé avec ❤️ par **Uniware Team**
-
-- Discord : [https://discord.gg/u3SwvGVvGD](https://discord.gg/u3SwvGVvGD)
-- Site Web : [https://uniware.site](https://uniware.site)
-
-## ⚠️ Avertissement
-
-Cette application est un client pour plusieurs services. Nous ne possédons pas les droits du contenu diffusé. Les publicités sont obligatoires pour soutenir le site gratuitement.
-
-## 🐛 Signaler un Bug
-
-Pour signaler un problème ou suggérer une amélioration :
-1. Ouvrez une issue sur GitHub
-2. Rejoignez notre Discord pour un support direct
-3. Décrivez le problème avec le maximum de détails
-
-## 🔄 Mises à Jour
-
-L'application vérifie automatiquement les mises à jour au démarrage. Les nouvelles versions incluent :
-- Corrections de bugs
-- Nouvelles fonctionnalités
-- Améliorations de performance
-- Mises à jour de sécurité
-
-## ⚠️ Avertissement légal
-
-Streamix est un logiciel open source agissant comme un client de navigation et de lecture de flux provenant de sites tiers.
-
-Streamix ne détient, n’héberge, ne distribue ni ne contrôle aucun contenu audiovisuel. Les sources accessibles via l’application sont des services externes indépendants.
-
-La présence de liens ou d’accès à des sites tiers ne constitue pas une approbation de leur contenu. L’utilisateur est seul responsable de l’utilisation qu’il fait du logiciel et doit s’assurer que les sites et contenus consultés respectent la législation en vigueur dans son pays.
+* **Licence** : MIT
+* **Discord** : [Rejoindre la communauté](https://discord.gg/u3SwvGVvGD)
+* **Site Web** : [uniware.site](https://uniware.site)
