@@ -53,11 +53,8 @@ function createWindow() {
 
   // 2. CORRECTION GOOGLE 403 & SIGNATURE APP
   let ua = mainWindow.webContents.getUserAgent();
-  // On retire "Electron/x.x.x" pour que Google accepte la connexion
   ua = ua.replace(/Electron\/[0-9\.]+\s?/, "");
-  // On nettoie les doublons potentiels
   ua = ua.replace(/StreamixApp\s?/, "").trim();
-  // On ajoute la signature pour security.js
   const finalUA = `${ua} StreamixApp`;
   mainWindow.webContents.setUserAgent(finalUA);
 
@@ -89,7 +86,7 @@ function createWindow() {
     }
   });
 
-  // --- INJECTIONS (Overlay & CSS) ---
+  // --- INJECTIONS (Overlay & CSS & PLUGINS) ---
   mainWindow.webContents.on("did-finish-load", () => {
     const currentUrl = mainWindow.webContents.getURL()
     if (currentUrl.startsWith("file:")) return
@@ -174,6 +171,25 @@ function createWindow() {
       })();
       `;
       mainWindow.webContents.executeJavaScript(bridgeScript).catch(() => {});
+
+      // --- D. INJECTION DES PLUGINS ---
+      const plugins = store.get("plugins", []) || [];
+      plugins.forEach(plugin => {
+        if (plugin.enabled && plugin.path) {
+          try {
+            if (fs.existsSync(plugin.path)) {
+              const pluginContent = fs.readFileSync(plugin.path, 'utf8');
+              const safeScript = `(function(){ try { ${pluginContent} } catch(e) { console.error("Erreur plugin ${plugin.name}:", e); } })();`;
+
+              mainWindow.webContents.executeJavaScript(safeScript)
+              .then(() => console.log(`Plugin injecté : ${plugin.name}`))
+              .catch(e => console.error(`Echec injection plugin ${plugin.name}:`, e));
+            }
+          } catch (err) {
+            console.error(`Impossible de lire le plugin ${plugin.name}:`, err);
+          }
+        }
+      });
   })
 
   // Navigation & Google Auth
@@ -185,7 +201,7 @@ function createWindow() {
       if (
         (sourceUrl && targetUrl.hostname.includes(sourceUrl.hostname)) ||
         url.includes("anime-sama") ||
-        url.includes("accounts.google.com") // AUTORISER GOOGLE LOGIN INTERNE
+        url.includes("accounts.google.com")
       ) {
         mainWindow.loadURL(url);
         return { action: "deny" };
@@ -196,18 +212,16 @@ function createWindow() {
   })
 }
 
-// --- CORRECTION DU BUG DE SCRIPT F1 ---
+// --- SCRIPT F1 ---
 function injectF1MenuScript(win) {
   if (!win || win.isDestroyed()) return;
   const config = store.get("config");
 
-  // Récupération sécurisée des textes
   const lang = config.language || 'fr';
   const t = (locales[lang] || locales.fr).f1Menu;
   const homeUrl = config.sourceUrl || "about:blank";
   const animsEnabled = config.animationsEnabled !== false;
 
-  // JSON.stringify protège les chaînes contenant des apostrophes (ex: "L'accueil")
   const txtHome = JSON.stringify(t.home);
   const txtRefresh = JSON.stringify(t.refresh);
   const txtPrev = JSON.stringify(t.previous);
@@ -243,7 +257,6 @@ function injectF1MenuScript(win) {
         btn.onclick = () => { action(); menu.style.display = 'none'; }; menu.appendChild(btn);
       };
 
-      // Injection des textes sécurisés via JSON.stringify
       createItem(${txtHome}, () => window.location.href = ${safeHomeUrl});
       createItem(${txtRefresh}, () => window.location.reload());
       createItem(${txtPrev}, () => window.history.back());
@@ -281,7 +294,6 @@ app.whenReady().then(() => {
     }
   });
 
-  // --- SAUVEGARDE CONFIG AVEC REDÉMARRAGE SI BESOIN ---
   ipcMain.handle("save-config", (event, newConfig) => {
     if (newConfig.sourceUrl && !newConfig.sourceUrl.includes(".github.io/")) {
       dialog.showErrorBox("Source non autorisée", "Seules les sources hébergées sur GitHub Pages (.github.io/) sont acceptées.");
@@ -289,7 +301,6 @@ app.whenReady().then(() => {
     }
 
     const currentConfig = store.get("config");
-    // Redémarrage si changement de Style OU Langue
     const restartNeeded =
     (newConfig.windowStyle !== currentConfig.windowStyle) ||
     (newConfig.language !== currentConfig.language);
@@ -310,15 +321,56 @@ app.whenReady().then(() => {
   ipcMain.handle("get-preferences", () => store.get("config"));
   ipcMain.handle("get-plugins", () => store.get("plugins"));
 
+  // --- SÉLECTION DES PLUGINS AMÉLIORÉE (AUTEUR + GITHUB + VERSION) ---
   ipcMain.handle("select-plugin-file", async () => {
-    const result = await dialog.showOpenDialog(settingsWindow || mainWindow, { filters: [{ name: "JavaScript", extensions: ["js"] }], properties: ["openFile"] });
+    const result = await dialog.showOpenDialog(settingsWindow || mainWindow, {
+      filters: [{ name: "JavaScript", extensions: ["js"] }],
+      properties: ["openFile"]
+    });
+
     if (result.canceled) return { success: false };
+
     const pPath = result.filePaths[0];
     const plugins = store.get("plugins", []);
+
     if (plugins.find(p => p.path === pPath)) return { success: false, error: "Déjà installé" };
-    const newPlugin = { name: path.basename(pPath, '.js'), path: pPath, enabled: true };
+
+    // DÉTECTION METADATA
+    let detectedAuthor = null;
+    let detectedGithub = null;
+    let detectedVersion = null;
+
+    try {
+      const content = fs.readFileSync(pPath, 'utf8');
+
+      // Auteur
+      const matchAuthor = content.match(/\/\/\s*@author\s+(.*)/i);
+      if (matchAuthor && matchAuthor[1]) detectedAuthor = matchAuthor[1].trim();
+
+      // Github
+      const matchGithub = content.match(/\/\/\s*@github\s+(.*)/i);
+      if (matchGithub && matchGithub[1]) detectedGithub = matchGithub[1].trim();
+
+      // Version (Nouveau)
+      const matchVersion = content.match(/\/\/\s*@version\s+(.*)/i);
+      if (matchVersion && matchVersion[1]) detectedVersion = matchVersion[1].trim();
+
+    } catch (e) {
+      console.error("Erreur lecture metadata:", e);
+    }
+
+    const newPlugin = {
+      name: path.basename(pPath, '.js'),
+                 path: pPath,
+                 enabled: true,
+                 author: detectedAuthor,
+                 github: detectedGithub,
+                 version: detectedVersion // Sauvegarde de la version
+    };
+
     plugins.push(newPlugin);
     store.set("plugins", plugins);
+
     return { success: true, plugin: newPlugin };
   });
 
