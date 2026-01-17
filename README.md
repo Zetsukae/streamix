@@ -93,6 +93,7 @@ streamix/
 ├── locales.js       # Fichier de traductions (FR, EN, ES, DE, JA)
 ├── settings.html    # Interface des paramètres
 ├── setup.html       # Interface de premier lancement
+├── animations.css   # Gère les animations de l'Application
 ├── assets/          # Icônes et images
 └── dist/            # Dossier de sortie des builds
 ```
