@@ -55,10 +55,13 @@ Si vous souhaitez contribuer au projet ou compiler votre propre version.
 
  1. Cloner le projet
 ```
-git clone [https://github.com/VOTRE_NOM/streamix.git](https://github.com/VOTRE_NOM/streamix.git)
+git clone [https://github.com/zetsukae/streamix](https://github.com/zetsukae/streamix)
 cd streamix
 ```
-
+Ou via :
+```
+Code > Download ZIP
+```
 ### 2. Installer les dépendances
 ```
 npm install
