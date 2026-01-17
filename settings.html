@@ -93,7 +93,7 @@
       display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-surface);
       border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px;
     }
-    .plugin-info div:first-child { font-weight: 600; font-size: 13px; }
+    .plugin-info div:first-child { font-weight: 600; font-size: 13px; display: flex; align-items: center; }
     .plugin-info div:last-child { font-size: 11px; color: var(--text-muted); font-family: monospace; }
     .btn-icon { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 4px; }
     .btn-icon:hover { color: #f85149; }
@@ -173,7 +173,7 @@
         <div style="text-align: center; padding: 40px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-surface);">
           <img src="https://i.imgur.com/lv3zp1J.png" alt="Logo" style="width: 64px; margin-bottom: 16px; opacity: 0.8;">
           <div style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">Streamix</div>
-          <div style="color: var(--text-muted); margin-bottom: 16px;">Version 1.3.0</div>
+          <div style="color: var(--text-muted); margin-bottom: 16px;">Version 1.0.0</div>
           <p style="color: var(--text-main); font-size: 14px; margin-bottom: 8px; line-height: 1.6; max-width: 400px; margin-left: auto; margin-right: auto;" data-i18n="desc">
             Description app.
           </p>
@@ -196,8 +196,6 @@
   </div>
 
   <script>
-    // DICTIONNAIRE DE TRADUCTION INTÉGRÉ
-    // (Copié de locales.js pour éviter les problèmes de require dans le renderer)
     const translations = {
       fr: {
         title: "Paramètres", menuGeneral: "Général", menuPlugins: "Extensions", menuAbout: "À propos",
@@ -256,7 +254,6 @@
       const animCheckbox = document.getElementById('animationsEnabled');
       const langSelect = document.getElementById('language');
 
-      // Fonction de mise à jour des textes
       function updateTexts(lang) {
         const t = translations[lang] || translations.fr;
         document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -270,7 +267,6 @@
         else { urlInput.style.borderColor = '#30363d'; }
       });
 
-      // Changement de langue en direct pour l'aperçu
       langSelect.addEventListener('change', (e) => {
         updateTexts(e.target.value);
       });
@@ -279,22 +275,17 @@
         try {
           const config = await window.electronAPI.getPreferences();
           urlInput.value = config.sourceUrl || '';
-
           const style = config.windowStyle || 'default';
           const radio = document.querySelector(`input[name="wStyle"][value="${style}"]`);
           if(radio) radio.checked = true;
-
           animCheckbox.checked = config.animationsEnabled !== false;
-
           const currentLang = config.language || 'fr';
           langSelect.value = currentLang;
           updateTexts(currentLang);
-
           loadPluginsList();
         } catch(e) { console.error(e); }
       }
 
-      // Sidebar logic
       const navItems = document.querySelectorAll('.sidebar-item');
       navItems.forEach(item => {
         item.addEventListener('click', () => {
@@ -314,7 +305,6 @@
         const style = document.querySelector('input[name="wStyle"]:checked').value;
         const animationsEnabled = animCheckbox.checked;
         const language = langSelect.value;
-
         await window.electronAPI.saveConfig({ sourceUrl, windowStyle: style, animationsEnabled, language });
       });
 
@@ -335,17 +325,33 @@
           const t = translations[currentLang] || translations.fr;
 
           if(!plugins || plugins.length === 0) {
-            list.innerHTML = `<div style="text-align: center; color: #8b949e; padding: 20px;">${t.noPlugins || "Aucun plugin"}</div>`;
+            list.innerHTML = `<div style="text-align: center; color: #8b949e; padding: 20px;">${t.noPlugins || "Aucun plugin installé"}</div>`;
             return;
           }
           plugins.forEach(p => {
             const div = document.createElement('div');
             div.className = 'plugin-item';
-            div.innerHTML = `<div class="plugin-info"><div>${p.name}</div><div>${p.path}</div></div>`;
+
+            // --- GESTION AUTEUR / GITHUB / VERSION ---
+            let authorHtml = '';
+            if (p.author) {
+                if (p.github) {
+                    authorHtml = `<a href="#" onclick="event.preventDefault(); window.electronAPI.openExternal('${p.github}')" style="color: var(--blue-link); margin-left: 8px; text-decoration: none; font-weight: normal; opacity: 1;">by ${p.author}</a>`;
+                } else {
+                    authorHtml = `<span style="color: var(--text-muted); margin-left: 8px; font-weight: normal; opacity: 0.8;">by ${p.author}</span>`;
+                }
+            }
+
+            // Badge Version
+            const versionHtml = p.version ? `<span style="background: #21262d; border: 1px solid #30363d; border-radius: 10px; padding: 2px 8px; font-size: 10px; color: var(--text-muted); margin-left: 8px;">v${p.version}</span>` : '';
+
+            div.innerHTML = `<div class="plugin-info"><div>${p.name} ${versionHtml} ${authorHtml}</div><div>${p.path}</div></div>`;
+
             const btn = document.createElement('button');
             btn.className = 'btn-icon';
             btn.innerHTML = '🗑️';
-            btn.onclick = async () => { if(confirm('Supprimer ?')) { await window.electronAPI.removePlugin(p.path); loadPluginsList(); }};
+            btn.title = 'Supprimer';
+            btn.onclick = async () => { if(confirm('Supprimer ce plugin ?')) { await window.electronAPI.removePlugin(p.path); loadPluginsList(); }};
             div.appendChild(btn);
             list.appendChild(div);
           });
