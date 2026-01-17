@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Settings</title>
+  <style>
+    /* --- STYLE GITHUB DARK --- */
+    :root {
+      --bg-canvas: #0d1117; --bg-surface: #161b22; --bg-element: #21262d;
+      --border-color: #30363d; --text-main: #c9d1d9; --text-muted: #8b949e;
+      --accent-color: #dc2626; --blue-link: #58a6ff; --green-btn: #238636;
+      --green-hover: #2ea043; --warning-bg: rgba(210, 153, 34, 0.15);
+      --warning-border: rgba(210, 153, 34, 0.4); --warning-text: #e3b341;
+    }
+    * { box-sizing: border-box; }
+    ::-webkit-scrollbar { display: none; }
+    * { scrollbar-width: none; }
+    body {
+      background-color: var(--bg-canvas); color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 14px; line-height: 1.5; height: 100vh; margin: 0;
+      user-select: none; display: flex; flex-direction: column; overflow: hidden;
+      border: 1px solid var(--border-color); -webkit-app-region: no-drag;
+    }
+    .title-bar {
+      height: 44px; background-color: var(--bg-surface); border-bottom: 1px solid var(--border-color);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
+      font-weight: 600; font-size: 14px; -webkit-app-region: drag;
+    }
+    .close-win-btn {
+      -webkit-app-region: no-drag; background: none; border: none; color: var(--text-muted);
+      font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      height: 28px; width: 28px; border-radius: 6px; transition: 0.2s;
+    }
+    .close-win-btn:hover { background-color: var(--bg-element); color: #ff7b72; }
+    .main-container { display: flex; flex: 1; height: calc(100% - 44px); }
+    .sidebar {
+      width: 220px; background-color: var(--bg-canvas); border-right: 1px solid var(--border-color);
+      padding: 16px 8px; display: flex; flex-direction: column; gap: 2px;
+    }
+    .sidebar-item {
+      padding: 8px 12px; border-radius: 6px; cursor: pointer; color: var(--text-main); transition: background 0.2s; font-size: 14px;
+    }
+    .sidebar-item:hover { background-color: var(--bg-element); }
+    .sidebar-item.active { background-color: var(--bg-element); font-weight: 600; color: white; position: relative; }
+    .sidebar-item.active::before {
+      content: ""; position: absolute; left: 0; top: 15%; height: 70%; width: 3px;
+      background-color: #f78166; border-radius: 0 4px 4px 0;
+    }
+    .content { flex: 1; padding: 32px; overflow-y: auto; background-color: var(--bg-canvas); }
+    .section { display: none; }
+    .section.active { display: block; animation: fade 0.2s ease; }
+    @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    h2 { margin-top: 0; margin-bottom: 20px; font-size: 20px; font-weight: 600; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+    .settings-box { margin-bottom: 24px; }
+    label { display: block; font-weight: 600; margin-bottom: 6px; color: var(--text-main); }
+    .sub-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: block; }
+    input[type="text"], select {
+      width: 100%; background-color: var(--bg-canvas); border: 1px solid var(--border-color);
+      border-radius: 6px; padding: 8px 12px; color: var(--text-main); font-size: 14px;
+      box-shadow: inset 0 0 0 1px transparent; transition: 0.2s; font-family: monospace;
+    }
+    input[type="text"]:focus, select:focus { border-color: var(--blue-link); outline: none; box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3); }
+    .radio-group { display: flex; flex-direction: column; gap: 8px; }
+    .radio-option, .checkbox-option {
+      display: flex; align-items: center; padding: 10px; border: 1px solid var(--border-color);
+      border-radius: 6px; cursor: pointer; background-color: var(--bg-surface); transition: 0.2s;
+    }
+    .radio-option:hover, .checkbox-option:hover { border-color: var(--text-muted); }
+    .radio-option input, .checkbox-option input { margin-right: 12px; accent-color: var(--accent-color); transform: scale(1.1); }
+    .actions {
+      margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color);
+      display: flex; gap: 10px; justify-content: flex-end;
+    }
+    button {
+      padding: 6px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer;
+      line-height: 20px; border: 1px solid rgba(240, 246, 252, 0.1); transition: 0.2s;
+    }
+    .btn-primary { background-color: var(--green-btn); color: #ffffff; }
+    .btn-primary:hover { background-color: var(--green-hover); }
+    .btn-secondary { background-color: var(--bg-element); color: var(--text-main); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background-color: #30363d; border-color: #8b949e; }
+    .danger-zone { margin-top: 40px; border: 1px solid rgba(248, 81, 73, 0.4); border-radius: 6px; padding: 16px; }
+    .danger-title { color: #f85149; font-weight: 600; margin-bottom: 8px; }
+    .btn-danger { color: #f85149; background-color: var(--bg-surface); border: 1px solid var(--border-color); width: 100%; }
+    .btn-danger:hover { background-color: rgba(185, 28, 28, 0.15); border-color: #f85149; }
+    .warning-box {
+      background-color: var(--warning-bg); border: 1px solid var(--warning-border);
+      border-radius: 6px; padding: 12px; margin-bottom: 20px; color: var(--warning-text); font-size: 13px;
+    }
+    .warning-title { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .plugin-item {
+      display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-surface);
+      border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px;
+    }
+    .plugin-info div:first-child { font-weight: 600; font-size: 13px; }
+    .plugin-info div:last-child { font-size: 11px; color: var(--text-muted); font-family: monospace; }
+    .btn-icon { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 4px; }
+    .btn-icon:hover { color: #f85149; }
+    .about-links { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+    .about-links button { min-width: 80px; }
+    .heart { display: inline-block; animation: beat 1.5s infinite; }
+    @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+  </style>
+</head>
+<body>
+  <div class="title-bar"><span data-i18n="title">Paramètres</span><button class="close-win-btn" id="btnClose">✕</button></div>
+  <div class="main-container">
+    <div class="sidebar">
+      <div class="sidebar-item active" data-section="general" data-i18n="menuGeneral">Général</div>
+      <div class="sidebar-item" data-section="plugins" data-i18n="menuPlugins">Extensions</div>
+      <div class="sidebar-item" data-section="about" data-i18n="menuAbout">À propos</div>
+    </div>
+    <div class="content">
+
+      <div id="general" class="section active">
+        <h2 data-i18n="menuGeneral">Général</h2>
+
+        <div class="settings-box">
+          <label for="language" data-i18n="langLabel">Langue</label>
+          <span class="sub-label" data-i18n="langDesc">Langue de l'interface.</span>
+          <select id="language">
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+            <option value="ja">日本語</option>
+          </select>
+        </div>
+
+        <div class="settings-box">
+          <label for="sourceUrl" data-i18n="sourceTitle">Source</label>
+          <span class="sub-label" data-i18n="sourceDesc">URL GitHub Pages.</span>
+          <input type="text" id="sourceUrl" placeholder="https://username.github.io/source/">
+        </div>
+
+        <div class="settings-box">
+          <label data-i18n="appearanceTitle">Apparence</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="wStyle" value="default">
+              <span data-i18n="styleImmersive">Streamix (Immersif)</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="wStyle" value="windows">
+              <span data-i18n="styleNative">Natif (Votre OS)</span>
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" id="animationsEnabled">
+              <span data-i18n="animTitle">Animations fluides</span>
+            </label>
+          </div>
+        </div>
+        <div class="danger-zone">
+           <div class="danger-title" data-i18n="dangerTitle">Zone de danger</div>
+           <p class="sub-label" data-i18n="dangerDesc">Effacer toutes les données.</p>
+           <button id="btnReset" class="btn-danger" data-i18n="resetBtn">Réinitialiser</button>
+        </div>
+      </div>
+
+      <div id="plugins" class="section">
+        <h2 data-i18n="pluginsTitle">Extensions</h2>
+        <div class="warning-box">
+          <div class="warning-title" data-i18n="securityTitle">⚠️ Sécurité</div>
+          <div data-i18n="securityDesc">Attention code arbitraire.</div>
+        </div>
+        <div style="margin-bottom: 16px;"><button id="btnAddPlugin" class="btn-secondary" style="width: 100%;" data-i18n="addPluginBtn">Ajouter un plugin</button></div>
+        <div id="plugin-list"><div style="text-align: center; color: var(--text-muted); padding: 20px;">Chargement...</div></div>
+      </div>
+
+      <div id="about" class="section">
+        <h2 data-i18n="aboutTitle">À propos</h2>
+        <div style="text-align: center; padding: 40px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-surface);">
+          <img src="https://i.imgur.com/lv3zp1J.png" alt="Logo" style="width: 64px; margin-bottom: 16px; opacity: 0.8;">
+          <div style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">Streamix</div>
+          <div style="color: var(--text-muted); margin-bottom: 16px;">Version 1.3.0</div>
+          <p style="color: var(--text-main); font-size: 14px; margin-bottom: 8px; line-height: 1.6; max-width: 400px; margin-left: auto; margin-right: auto;" data-i18n="desc">
+            Description app.
+          </p>
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 24px;" data-i18n="madeBy">
+             Fait par <span class="heart">❤️</span>, de Zetsukae.
+          </div>
+          <div class="about-links">
+            <button id="btnRepo" class="btn-secondary" data-i18n="btnRepo">Repo</button>
+            <button id="btnWiki" class="btn-secondary" data-i18n="btnWiki">Wiki</button>
+            <button id="btnIssues" class="btn-secondary" data-i18n="btnIssues">Issues</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="btnCancel" class="btn-secondary" data-i18n="btnCancel">Annuler</button>
+        <button id="btnSave" class="btn-primary" data-i18n="btnSave">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // DICTIONNAIRE DE TRADUCTION INTÉGRÉ
+    // (Copié de locales.js pour éviter les problèmes de require dans le renderer)
+    const translations = {
+      fr: {
+        title: "Paramètres", menuGeneral: "Général", menuPlugins: "Extensions", menuAbout: "À propos",
+        langLabel: "Langue", langDesc: "Langue de l'interface.",
+        sourceTitle: "Source de démarrage", sourceDesc: "URL d'une source GitHub Pages valide (<strong>.github.io/</strong>).",
+        appearanceTitle: "Apparence", styleImmersive: "Streamix (Immersif)", styleNative: "Natif (Votre OS)", animTitle: "Activer les animations fluides",
+        dangerTitle: "Zone de danger", dangerDesc: "Effacer toutes les données et recommencer.", resetBtn: "Réinitialiser Streamix",
+        pluginsTitle: "Extensions", securityTitle: "⚠️ Risque de sécurité", securityDesc: "Les plugins sont du <strong>code arbitraire</strong> qui s'exécute avec les mêmes droits que l'application. N'ajoutez JAMAIS un plugin dont vous ne connaissez pas l'origine ou le développeur.", addPluginBtn: "Ajouter un plugin (.js)",
+        aboutTitle: "À propos", desc: "Streamix est une application open-source conçue pour centraliser vos sources de streaming.", madeBy: "Fait par <span class='heart'>❤️</span>, de Zetsukae.",
+        btnRepo: "Repo", btnWiki: "Wiki", btnIssues: "Issues", btnCancel: "Annuler", btnSave: "Enregistrer"
+      },
+      en: {
+        title: "Settings", menuGeneral: "General", menuPlugins: "Plugins", menuAbout: "About",
+        langLabel: "Language", langDesc: "Interface language.",
+        sourceTitle: "Startup Source", sourceDesc: "URL of a valid GitHub Pages source (<strong>.github.io/</strong>).",
+        appearanceTitle: "Appearance", styleImmersive: "Streamix (Immersive)", styleNative: "Native (Your OS)", animTitle: "Enable smooth animations",
+        dangerTitle: "Danger Zone", dangerDesc: "Clear all data and restart.", resetBtn: "Reset Streamix",
+        pluginsTitle: "Plugins", securityTitle: "⚠️ Security Risk", securityDesc: "Plugins are <strong>arbitrary code</strong> running with the same rights as the application. NEVER add a plugin unless you trust its origin or developer.", addPluginBtn: "Add a plugin (.js)",
+        aboutTitle: "About", desc: "Streamix is an open-source application designed to centralize your streaming sources.", madeBy: "Made with <span class='heart'>❤️</span>, by Zetsukae.",
+        btnRepo: "Repo", btnWiki: "Wiki", btnIssues: "Issues", btnCancel: "Cancel", btnSave: "Save"
+      },
+      es: {
+        title: "Ajustes", menuGeneral: "General", menuPlugins: "Plugins", menuAbout: "Acerca de",
+        langLabel: "Idioma", langDesc: "Idioma de la interfaz.",
+        sourceTitle: "Fuente de inicio", sourceDesc: "URL de GitHub Pages válida (<strong>.github.io/</strong>).",
+        appearanceTitle: "Apariencia", styleImmersive: "Streamix (Inmersivo)", styleNative: "Nativo (Tu SO)", animTitle: "Activar animaciones fluidas",
+        dangerTitle: "Zona de peligro", dangerDesc: "Borrar datos y reiniciar.", resetBtn: "Reiniciar Streamix",
+        pluginsTitle: "Plugins", securityTitle: "⚠️ Riesgo de seguridad", securityDesc: "Los plugins ejecutan <strong>código arbitrario</strong>. NUNCA añada un plugin desconocido.", addPluginBtn: "Añadir plugin (.js)",
+        aboutTitle: "Acerca de", desc: "Streamix es una aplicación de código abierto para centralizar tus fuentes de streaming.", madeBy: "Hecho con <span class='heart'>❤️</span>, por Zetsukae.",
+        btnRepo: "Repo", btnWiki: "Wiki", btnIssues: "Issues", btnCancel: "Cancelar", btnSave: "Guardar"
+      },
+      de: {
+        title: "Einstellungen", menuGeneral: "Allgemein", menuPlugins: "Erweiterungen", menuAbout: "Über",
+        langLabel: "Sprache", langDesc: "Sprache der Benutzeroberfläche.",
+        sourceTitle: "Startquelle", sourceDesc: "Gültige GitHub Pages URL (<strong>.github.io/</strong>).",
+        appearanceTitle: "Erscheinungsbild", styleImmersive: "Streamix (Immersiv)", styleNative: "Nativ (Ihr OS)", animTitle: "Flüssige Animationen",
+        dangerTitle: "Gefahrenzone", dangerDesc: "Alle Daten löschen.", resetBtn: "Zurücksetzen",
+        pluginsTitle: "Erweiterungen", securityTitle: "⚠️ Sicherheit", securityDesc: "Plugins sind <strong>beliebiger Code</strong>. Seien Sie vorsichtig.", addPluginBtn: "Plugin hinzufügen (.js)",
+        aboutTitle: "Über", desc: "Streamix zentralisiert Ihre Streaming-Quellen.", madeBy: "Gemacht mit <span class='heart'>❤️</span> von Zetsukae.",
+        btnRepo: "Repo", btnWiki: "Wiki", btnIssues: "Issues", btnCancel: "Abbrechen", btnSave: "Speichern"
+      },
+      ja: {
+        title: "設定", menuGeneral: "一般", menuPlugins: "プラグイン", menuAbout: "概要",
+        langLabel: "言語", langDesc: "インターフェース言語。",
+        sourceTitle: "起動ソース", sourceDesc: "有効なGitHub Pages URL (<strong>.github.io/</strong>)。",
+        appearanceTitle: "外観", styleImmersive: "Streamix (没入型)", styleNative: "ネイティブ (OS)", animTitle: "滑らかなアニメーション",
+        dangerTitle: "危険地帯", dangerDesc: "すべてのデータを消去。", resetBtn: "リセット",
+        pluginsTitle: "プラグイン", securityTitle: "⚠️ セキュリティ", securityDesc: "プラグインは<strong>任意のコード</strong>を実行します。注意してください。", addPluginBtn: "プラグイン追加 (.js)",
+        aboutTitle: "概要", desc: "Streamixはストリーミングソースを一元化するアプリです。", madeBy: "Zetsukaeによって<span class='heart'>❤️</span>で作られました。",
+        btnRepo: "Repo", btnWiki: "Wiki", btnIssues: "Issues", btnCancel: "キャンセル", btnSave: "保存"
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const urlInput = document.getElementById('sourceUrl');
+      const animCheckbox = document.getElementById('animationsEnabled');
+      const langSelect = document.getElementById('language');
+
+      // Fonction de mise à jour des textes
+      function updateTexts(lang) {
+        const t = translations[lang] || translations.fr;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (t[key]) el.innerHTML = t[key];
+        });
+      }
+
+      urlInput.addEventListener('input', () => {
+        if(urlInput.value && !urlInput.value.includes('.github.io/')) { urlInput.style.borderColor = '#f85149'; }
+        else { urlInput.style.borderColor = '#30363d'; }
+      });
+
+      // Changement de langue en direct pour l'aperçu
+      langSelect.addEventListener('change', (e) => {
+        updateTexts(e.target.value);
+      });
+
+      if(window.electronAPI) {
+        try {
+          const config = await window.electronAPI.getPreferences();
+          urlInput.value = config.sourceUrl || '';
+
+          const style = config.windowStyle || 'default';
+          const radio = document.querySelector(`input[name="wStyle"][value="${style}"]`);
+          if(radio) radio.checked = true;
+
+          animCheckbox.checked = config.animationsEnabled !== false;
+
+          const currentLang = config.language || 'fr';
+          langSelect.value = currentLang;
+          updateTexts(currentLang);
+
+          loadPluginsList();
+        } catch(e) { console.error(e); }
+      }
+
+      // Sidebar logic
+      const navItems = document.querySelectorAll('.sidebar-item');
+      navItems.forEach(item => {
+        item.addEventListener('click', () => {
+          navItems.forEach(i => i.classList.remove('active'));
+          document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+          item.classList.add('active');
+          document.getElementById(item.getAttribute('data-section')).classList.add('active');
+        });
+      });
+
+      const close = () => window.electronAPI.closeSettings();
+      document.getElementById('btnClose').addEventListener('click', close);
+      document.getElementById('btnCancel').addEventListener('click', close);
+
+      document.getElementById('btnSave').addEventListener('click', async () => {
+        const sourceUrl = urlInput.value;
+        const style = document.querySelector('input[name="wStyle"]:checked').value;
+        const animationsEnabled = animCheckbox.checked;
+        const language = langSelect.value;
+
+        await window.electronAPI.saveConfig({ sourceUrl, windowStyle: style, animationsEnabled, language });
+      });
+
+      document.getElementById('btnReset').addEventListener('click', async () => { if(confirm('Tout effacer ?')) await window.electronAPI.resetApp(); });
+      document.getElementById('btnAddPlugin').addEventListener('click', async () => { await window.electronAPI.selectPluginFile(); loadPluginsList(); });
+
+      const open = (url) => window.electronAPI.openExternal(url);
+      document.getElementById('btnRepo').addEventListener('click', () => open('https://github.com/Zetsukae/streamix'));
+      document.getElementById('btnWiki').addEventListener('click', () => open('https://github.com/Zetsukae/streamix/wiki'));
+      document.getElementById('btnIssues').addEventListener('click', () => open('https://github.com/Zetsukae/streamix/issues'));
+
+      async function loadPluginsList() {
+        try {
+          const plugins = await window.electronAPI.getPlugins();
+          const list = document.getElementById('plugin-list');
+          list.innerHTML = '';
+          const currentLang = langSelect.value;
+          const t = translations[currentLang] || translations.fr;
+
+          if(!plugins || plugins.length === 0) {
+            list.innerHTML = `<div style="text-align: center; color: #8b949e; padding: 20px;">${t.noPlugins || "Aucun plugin"}</div>`;
+            return;
+          }
+          plugins.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'plugin-item';
+            div.innerHTML = `<div class="plugin-info"><div>${p.name}</div><div>${p.path}</div></div>`;
+            const btn = document.createElement('button');
+            btn.className = 'btn-icon';
+            btn.innerHTML = '🗑️';
+            btn.onclick = async () => { if(confirm('Supprimer ?')) { await window.electronAPI.removePlugin(p.path); loadPluginsList(); }};
+            div.appendChild(btn);
+            list.appendChild(div);
+          });
+        } catch(e) {}
+      }
+    });
+  </script>
+</body>
+</html>
