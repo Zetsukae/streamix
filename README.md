@@ -11,9 +11,9 @@
 
 ---
 
-## Website branch ?
+## Branche Website?
 
-La **Branch Website** est le code pour le site de [Streamix](https://streamix.buzz). 
+La **Branche Website** est le code pour le site de [Streamix](https://streamix.buzz). 
 
 ---
 
