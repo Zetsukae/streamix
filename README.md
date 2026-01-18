@@ -45,35 +45,139 @@ Streamix est disponible pour **Windows** et **Linux**.
 
 ---
 
-## 🛠️ Installation (Développement)
+## 🧩 Guide de Développement de Plugins
 
-Si vous souhaitez contribuer au projet ou compiler votre propre version.
+Vous souhaitez étendre les fonctionnalités de Streamix ? Ce guide vous explique comment créer vos propres extensions (`.js`) pour ajouter des fonctionnalités ou modifier l'apparence de l'application.
+
+### 1. Structure d'un Plugin
+
+Un plugin Streamix est un simple fichier JavaScript (`.js`). Pour qu'il soit correctement reconnu par l'application, il doit inclure des **métadonnées** spécifiques sous forme de commentaires au tout début du fichier.
+
+#### Les Métadonnées (En-tête)
+
+Ces informations permettent à Streamix d'afficher votre nom, votre lien et la version du plugin dans les paramètres.
+
+```javascript
+// @author VotrePseudo
+// @github [https://github.com/VotrePseudo](https://github.com/VotrePseudo)
+// @version 1.0
+```
+
+* **`@author`** : Votre nom ou pseudo (Obligatoire pour le crédit).
+* **`@github`** : Le lien vers votre profil GitHub (Optionnel). Si présent, votre nom deviendra un lien bleu cliquable.
+* **`@version`** : Le numéro de version du plugin (ex: `1.0`, `2.1.5`). Un badge sera affiché à côté du nom.
+
+### 2. Écrire le Code
+
+Le code de votre plugin est injecté directement dans la fenêtre principale de l'application. Vous avez accès au **DOM** (l'interface HTML) et à l'objet `window`.
+
+#### Bonnes Pratiques
+
+Il est fortement recommandé d'envelopper votre code dans une **fonction auto-exécutée (IIFE)**. Cela évite que vos variables ne rentrent en conflit avec celles de l'application ou d'autres plugins.
+
+```javascript
+(function() {
+    'use strict';
+    // Votre code ici...
+    console.log("Mon plugin démarre !");
+})();
+```
+
+#### Ce que vous pouvez faire
+* **Manipuler le DOM** : Ajouter des boutons, cacher des éléments, changer des couleurs.
+* **Écouter des événements** : Détecter les clics, les touches du clavier.
+* **Utiliser l'API Streamix** : Si disponible, via `window.electronAPI`.
+
+### 3. Exemple Complet : "Hello World"
+
+Voici un exemple simple qui affiche une petite notification verte au démarrage de l'application.
+
+```javascript
+// @author Zetsukae
+// @github [https://github.com/Zetsukae](https://github.com/Zetsukae)
+// @version 1.0
+
+(function() {
+    'use strict';
+
+    console.log("Plugin Hello World chargé !");
+
+    // Créer un élément de notification
+    const notif = document.createElement('div');
+    notif.innerText = "Bienvenue sur Streamix ! 🚀";
+    
+    // Appliquer du style
+    Object.assign(notif.style, {
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        backgroundColor: '#238636', // Vert GitHub
+        color: 'white',
+        padding: '10px 20px',
+        borderRadius: '8px',
+        zIndex: '9999',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+        fontFamily: 'sans-serif',
+        opacity: '0',
+        transition: 'opacity 0.5s'
+    });
+
+    // Ajouter à la page
+    document.body.appendChild(notif);
+
+    // Animation d'apparition
+    setTimeout(() => { notif.style.opacity = '1'; }, 100);
+
+    // Disparition après 5 secondes
+    setTimeout(() => {
+        notif.style.opacity = '0';
+        setTimeout(() => notif.remove(), 500);
+    }, 5000);
+
+})();
+```
+
+### 4. Installation et Test
+
+1.  Ouvrez **Streamix**.
+2.  Appuyez sur `F1` ou cliquez sur le bouton Home pour ouvrir le menu.
+3.  Allez dans **Paramètres** > **Extensions**.
+4.  Cliquez sur **"Ajouter un plugin (.js)"**.
+5.  Sélectionnez votre fichier `.js`.
+6.  Le plugin apparaîtra dans la liste avec votre nom en bleu (si GitHub renseigné) et sa version.
+7.  **Redémarrez** ou **Actualisez** l'application pour que le plugin prenne effet.
+
+> **⚠️ Avertissement de Sécurité**
+> Les plugins ont accès à toute l'interface de l'application. N'installez jamais un plugin dont vous ne connaissez pas la provenance ou si vous n'avez pas confiance en l'auteur.
+
+---
+
+## 🛠️ Installation (Développement Core)
+
+Si vous souhaitez contribuer au code source de l'application elle-même ou compiler votre propre version.
 
 ### Prérequis
 * **Node.js** (v16 ou supérieur)
 * **npm** ou **yarn**
 
- 1. Cloner le projet
-```
+### 1. Cloner le projet
+```bash
 git clone [https://github.com/zetsukae/streamix](https://github.com/zetsukae/streamix)
 cd streamix
 ```
-Ou via :
-```
-Code > Download ZIP
-```
+
 ### 2. Installer les dépendances
-```
+```bash
 npm install
 ```
 
 ### 3. Lancer en mode dev
-```
+```bash
 npm start
 ```
 
 ### 4. Compiler l'application (Build)
-```
+```bash
 # Pour Windows
 npm run build:win
 
