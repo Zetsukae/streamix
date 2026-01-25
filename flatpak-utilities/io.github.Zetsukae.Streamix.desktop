@@ -1,0 +1,9 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Name=Streamix
+Comment=Centralisez vos streamings
+Exec=flatpak run io.github.Zetsukae.Streamix
+Icon=io.github.Zetsukae.Streamix
+Type=Application
+Categories=Utility;AudioVideo;
+StartupWMClass=streamix
