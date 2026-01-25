@@ -2,7 +2,7 @@
 [Desktop Entry]
 Name=Streamix
 Comment=Centralisez vos streamings
-Exec=flatpak run io.github.Zetsukae.Streamix
+Exec=streamix
 Icon=io.github.Zetsukae.Streamix
 Type=Application
 Categories=Utility;AudioVideo;
