@@ -37,12 +37,12 @@ function updateDownloadLinks() {
 
     if (os === 'Windows') {
         url = DOWNLOAD_URLS.windows;
-        message = "Télécharger pour Windows";
+        message = "Download for Windows";
     } else if (os === 'Linux') {
         url = DOWNLOAD_URLS.linux;
-        message = "Télécharger pour Linux";
+        message = "Download for Linux";
     } else if (['macOS', 'Android', 'iOS'].includes(os)) {
-        message = `Indisponible sur ${os}`;
+        message = `Not avaible on ${os}`;
         available = false;
     }
 
