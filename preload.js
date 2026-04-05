@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
                                 getPlugins: () => ipcRenderer.invoke("get-plugins"),
                                 selectPluginFile: () => ipcRenderer.invoke("select-plugin-file"),
                                 removePlugin: (path) => ipcRenderer.invoke("remove-plugin", path),
+                                togglePlugin: (path) => ipcRenderer.invoke("toggle-plugin", path),
 
                                 // --- URLS PERSONNALISÉES ---
                                 getCustomUrls: () => ipcRenderer.invoke("get-custom-urls"),

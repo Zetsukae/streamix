@@ -342,6 +342,23 @@ app.whenReady().then(() => {
   ipcMain.handle("get-preferences", () => store.get("config"));
   ipcMain.handle("get-plugins", () => store.get("plugins"));
 
+  // --- HELPER: Copier plugin dans dossier de l'app (userData) ---
+  const copyPluginToAppFolder = (sourcePath) => {
+    const pluginsDir = path.join(app.getPath('userData'), 'plugins');
+    
+    // Créer le dossier s'il n'existe pas
+    if (!fs.existsSync(pluginsDir)) {
+      fs.mkdirSync(pluginsDir, { recursive: true });
+    }
+    
+    const fileName = path.basename(sourcePath);
+    const destPath = path.join(pluginsDir, fileName);
+    
+    // Copier le fichier
+    fs.copyFileSync(sourcePath, destPath);
+    return destPath;
+  };
+
   // --- SÉLECTION DES PLUGINS AMÉLIORÉE (AUTEUR + GITHUB + VERSION) ---
   ipcMain.handle("select-plugin-file", async () => {
     const result = await dialog.showOpenDialog(settingsWindow || mainWindow, {
@@ -356,7 +373,16 @@ app.whenReady().then(() => {
 
     if (plugins.find(p => p.path === pPath)) return { success: false, error: "Déjà installé" };
 
-    // DÉTECTION METADATA
+    // Copier le plugin dans le dossier de l'app
+    let appPluginPath;
+    try {
+      appPluginPath = copyPluginToAppFolder(pPath);
+    } catch (e) {
+      console.error("Erreur copie plugin:", e);
+      return { success: false, error: "Erreur lors de la copie du plugin" };
+    }
+
+    // DÉTECTION METADATA à partir du chemin source
     let detectedAuthor = null;
     let detectedGithub = null;
     let detectedVersion = null;
@@ -382,7 +408,7 @@ app.whenReady().then(() => {
 
     const newPlugin = {
       name: path.basename(pPath, '.js'),
-                 path: pPath,
+                 path: appPluginPath,
                  enabled: true,
                  author: detectedAuthor,
                  github: detectedGithub,
@@ -399,7 +425,28 @@ app.whenReady().then(() => {
     let plugins = store.get("plugins", []);
     plugins = plugins.filter(p => p.path !== pPath);
     store.set("plugins", plugins);
+    
+    // Supprimer le fichier du dossier de l'app
+    try {
+      if (fs.existsSync(pPath)) {
+        fs.unlinkSync(pPath);
+      }
+    } catch (err) {
+      console.error("Erreur suppression fichier plugin:", err);
+    }
+    
     return { success: true };
+  });
+
+  ipcMain.handle("toggle-plugin", (e, pPath) => {
+    let plugins = store.get("plugins", []);
+    const plugin = plugins.find(p => p.path === pPath);
+    if (plugin) {
+      plugin.enabled = !plugin.enabled;
+      store.set("plugins", plugins);
+      return { success: true, enabled: plugin.enabled };
+    }
+    return { success: false };
   });
 
   ipcMain.handle("get-custom-urls", () => {
