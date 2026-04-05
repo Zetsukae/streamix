@@ -52,17 +52,30 @@
 
     label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text-main); }
 
-    input[type="text"] {
-      width: 100%; padding: 10px 12px; background-color: var(--bg-canvas);
-      border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main);
-      font-size: 14px; box-sizing: border-box; transition: 0.2s; outline: none; font-family: monospace;
+    .radio-option {
+      display: flex; align-items: center; padding: 12px; border: 1px solid var(--border-color);
+      border-radius: 6px; background-color: var(--bg-canvas); cursor: pointer; margin-bottom: 8px;
+      transition: 0.2s;
     }
-    input[type="text"]:focus { border-color: var(--link-color); box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15); }
-    input[type="text"].error { border-color: var(--error-color); box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.15); }
+    .radio-option:hover { border-color: var(--link-color); }
+    .radio-option input { margin-right: 12px; accent-color: #238636; }
+    .radio-option span { font-size: 14px; color: var(--text-main); }
 
-    .error-msg {
-      color: var(--error-color); font-size: 12px; margin-top: 6px; display: none;
+    .custom-url-section {
+      margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);
     }
+    .custom-url-section label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 8px; color: var(--text-main); }
+    .custom-url-input { 
+      width: 100%; padding: 8px 12px; background-color: var(--bg-canvas);
+      border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-main);
+      font-size: 13px; box-sizing: border-box; margin-bottom: 8px;
+    }
+    .btn-add-url {
+      width: 100%; padding: 8px; background-color: #21262d; color: var(--text-main);
+      border: 1px solid var(--border-color); border-radius: 6px; font-size: 12px; cursor: pointer; margin-bottom: 12px;
+    }
+    .btn-add-url:hover { background-color: #30363d; }
+    .saved-urls { margin-top: 8px; }
 
     .btn-launch {
       width: 100%; padding: 10px; background-color: #238636; color: white;
@@ -88,12 +101,31 @@
     <img src="https://i.imgur.com/lv3zp1J.png" alt="Logo Streamix" class="logo">
 
     <h1>Configuration initiale</h1>
-    <p>Veuillez entrer une URL de source valide (hébergée sur GitHub Pages) pour synchroniser votre contenu.</p>
+    <p>Sélectionnez votre site de streaming préféré pour commencer.</p>
 
     <div class="input-group">
-      <label>URL de la source</label>
-      <input type="text" id="urlInput" placeholder="https://pseudo.github.io/projet/">
-      <div class="error-msg" id="errorMsg">Source invalide (doit contenir .github.io/)</div>
+      <label>Choisissez un site</label>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="selectedSite" value="franime" checked>
+          <span>Franime (https://franime.fr/)</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="selectedSite" value="anime-sama">
+          <span>Anime Sama (https://anime-sama.pw/)</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="selectedSite" value="streamex">
+          <span>Streamex (https://streamex.sh/)</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="custom-url-section">
+      <label>Ou ajouter une URL personnalisée</label>
+      <input type="text" id="customUrlInput" class="custom-url-input" placeholder="https://votre-site.com/">
+      <button id="addCustomUrlBtn" class="btn-add-url">+ Ajouter cette URL</button>
+      <div id="savedUrls" class="saved-urls"></div>
     </div>
 
     <button id="launchBtn" class="btn-launch">Lancer Streamix</button>
@@ -105,32 +137,85 @@
   </div>
 
   <script>
-    const urlInput = document.getElementById('urlInput');
     const launchBtn = document.getElementById('launchBtn');
-    const errorMsg = document.getElementById('errorMsg');
+    const customUrlInput = document.getElementById('customUrlInput');
+    const addCustomUrlBtn = document.getElementById('addCustomUrlBtn');
+    const savedUrlsDiv = document.getElementById('savedUrls');
+
+    // IPC pour charger les URLs sauvegardées
+    let savedCustomUrls = [];
+    if (window.electronAPI && window.electronAPI.getCustomUrls) {
+      window.electronAPI.getCustomUrls().then(urls => {
+        savedCustomUrls = urls || [];
+        displaySavedUrls();
+      }).catch(() => {});
+    }
+
+    function displaySavedUrls() {
+      if (savedCustomUrls.length === 0) {
+        savedUrlsDiv.innerHTML = '';
+        return;
+      }
+      savedUrlsDiv.innerHTML = '<div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">URLs sauvegardées:</div>' +
+        savedCustomUrls.map(url => `
+          <label class="radio-option" style="margin-bottom: 8px;">
+            <input type="radio" name="selectedSite" value="custom_${url}">
+            <span>${url}</span>
+          </label>
+        `).join('');
+    }
+
+    addCustomUrlBtn.addEventListener('click', () => {
+      const url = customUrlInput.value.trim();
+      
+      if (!url) {
+        alert("Veuillez entrer une URL");
+        return;
+      }
+      
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        alert("L'URL doit commencer par http:// ou https://");
+        customUrlInput.style.borderColor = '#f85149';
+        customUrlInput.focus();
+        setTimeout(() => { customUrlInput.style.borderColor = 'var(--border-color)'; }, 2000);
+        return;
+      }
+      
+      if (savedCustomUrls.includes(url)) {
+        alert("Cette URL est déjà ajoutée");
+        return;
+      }
+      
+      savedCustomUrls.push(url);
+      if (window.electronAPI && window.electronAPI.saveCustomUrls) {
+        window.electronAPI.saveCustomUrls(savedCustomUrls);
+      }
+      displaySavedUrls();
+      customUrlInput.value = '';
+      
+      // Auto-select the new URL
+      const newRadio = document.querySelector(`input[value="custom_${url}"]`);
+      if (newRadio) newRadio.checked = true;
+    });
+
+    const siteMap = {
+      "franime": "https://franime.fr/",
+      "anime-sama": "https://anime-sama.pw/",
+      "streamex": "https://streamex.sh/"
+    };
 
     launchBtn.addEventListener('click', () => {
-      const url = urlInput.value.trim();
-
-      // VALIDATION STRICTE : Uniquement .github.io/
-      if(url.length > 0 && url.includes(".github.io/")) {
-        const finalUrl = url.startsWith('http') ? url : 'https://' + url;
-        window.electronAPI.saveConfig({ sourceUrl: finalUrl });
-      } else {
-        urlInput.classList.add('error');
-        errorMsg.style.display = 'block';
-        launchBtn.classList.add('shake');
-        setTimeout(() => launchBtn.classList.remove('shake'), 500);
+      const selectedRadio = document.querySelector('input[name="selectedSite"]:checked');
+      const selectedValue = selectedRadio.value;
+      let sourceUrl = siteMap[selectedValue];
+      
+      if (!sourceUrl && selectedValue.startsWith('custom_')) {
+        sourceUrl = selectedValue.substring(7);
       }
-    });
-
-    urlInput.addEventListener('input', () => {
-       urlInput.classList.remove('error');
-       errorMsg.style.display = 'none';
-    });
-
-    urlInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') launchBtn.click();
+      
+      if (sourceUrl) {
+        window.electronAPI.saveConfig({ selectedSite: selectedValue, sourceUrl });
+      }
     });
 
     // LIEN VERS LES SOURCES (streamix.buzz)

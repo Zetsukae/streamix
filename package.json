@@ -1,6 +1,6 @@
 {
   "name": "streamix",
-  "version": "1.0.0",
+  "version": "1.1.26",
   "description": "Application pouvant faire ce que vous voulez avec vos source!",
   "author": "Zetsukae",
   "main": "main.js",

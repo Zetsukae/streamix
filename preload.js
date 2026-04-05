@@ -23,8 +23,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
                                 selectPluginFile: () => ipcRenderer.invoke("select-plugin-file"),
                                 removePlugin: (path) => ipcRenderer.invoke("remove-plugin", path),
 
+                                // --- URLS PERSONNALISÉES ---
+                                getCustomUrls: () => ipcRenderer.invoke("get-custom-urls"),
+                                saveCustomUrls: (urls) => ipcRenderer.invoke("save-custom-urls", urls),
+
                                 // --- DIVERS ---
                                 openExternal: (url) => ipcRenderer.invoke("open-external-link", url),
+                                showContextMenu: (menuItems) => ipcRenderer.invoke("show-context-menu", menuItems),
 
                                 // --- BRIDGE SYNC (Données du site) ---
                                 syncData: (payload) => ipcRenderer.send("bridge-sync-data", payload)

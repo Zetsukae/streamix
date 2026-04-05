@@ -11,13 +11,14 @@ const store = new Store({
   defaults: {
     config: {
       language: "fr",
-      sourceUrl: "",
+      sourceUrl: "https://franime.fr/",
       windowStyle: "default",
       homeButtonBehavior: "menu",
       experimentalEnabled: false,
       animationsEnabled: true
     },
     plugins: [],
+    customUrls: [],
     siteData: {}
   }
 })
@@ -58,10 +59,15 @@ function createWindow() {
   const finalUA = `${ua} StreamixApp`;
   mainWindow.webContents.setUserAgent(finalUA);
 
-  // 3. SÉCURITÉ : Key dans les Headers
+  // 3. SÉCURITÉ : Autoriser Google et autres domaines
   if (config.sourceUrl) {
-    const filter = { urls: [config.sourceUrl + "*"] };
+    const filter = { urls: [config.sourceUrl + "*", "https://accounts.google.com/*", "https://www.google.com/*"] };
     session.defaultSession.webRequest.onBeforeSendHeaders(filter, (details, callback) => {
+      // Allow Google requests
+      if (details.url.includes('google.com') || details.url.includes('accounts.google.com')) {
+        callback({ requestHeaders: details.requestHeaders });
+        return;
+      }
       details.requestHeaders['X-Streamix-Key'] = 'zetsukaedagoat';
       callback({ requestHeaders: details.requestHeaders });
     });
@@ -69,7 +75,8 @@ function createWindow() {
 
   // Démarrage
   const url = config.sourceUrl || "";
-  if (url && (url.includes(".github.io/") || url.includes("anime-sama"))) {
+  const validSites = ["franime.fr", "anime-sama.pw", "streamex.sh"];
+  if (url && validSites.some(site => url.includes(site))) {
     mainWindow.loadURL(url)
   } else {
     loadSetupScreen()
@@ -286,6 +293,13 @@ app.whenReady().then(() => {
   ipcMain.handle("close-window", () => mainWindow.close());
   ipcMain.handle("restart-app", () => { app.relaunch(); app.exit(0); });
   ipcMain.handle("open-external-link", (e, url) => shell.openExternal(url));
+  ipcMain.handle("show-context-menu", (event, menuItems) => {
+    const menu = Menu.buildFromTemplate(menuItems.map(item => ({
+      label: item.label,
+      click: item.click
+    })));
+    menu.popup({ window: BrowserWindow.fromWebContents(event.sender) });
+  });
   ipcMain.handle("reset-application", () => { store.clear(); app.relaunch(); app.exit(0); });
 
   ipcMain.on("bridge-sync-data", (event, payload) => {
@@ -295,9 +309,16 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle("save-config", (event, newConfig) => {
-    if (newConfig.sourceUrl && !newConfig.sourceUrl.includes(".github.io/")) {
-      dialog.showErrorBox("Source non autorisée", "Seules les sources hébergées sur GitHub Pages (.github.io/) sont acceptées.");
-      return;
+    // Site selection: map to URLs
+    const siteMap = {
+      "franime": "https://franime.fr/",
+      "anime-sama": "https://anime-sama.pw/",
+      "streamex": "https://streamex.sh/"
+    };
+    
+    // Si sourceUrl n'est pas déjà fourni (pour les URLs custom), le mapper depuis selectedSite
+    if (!newConfig.sourceUrl && newConfig.selectedSite && siteMap[newConfig.selectedSite]) {
+      newConfig.sourceUrl = siteMap[newConfig.selectedSite];
     }
 
     const currentConfig = store.get("config");
@@ -378,6 +399,15 @@ app.whenReady().then(() => {
     let plugins = store.get("plugins", []);
     plugins = plugins.filter(p => p.path !== pPath);
     store.set("plugins", plugins);
+    return { success: true };
+  });
+
+  ipcMain.handle("get-custom-urls", () => {
+    return store.get("customUrls", []);
+  });
+
+  ipcMain.handle("save-custom-urls", (event, urls) => {
+    store.set("customUrls", urls);
     return { success: true };
   });
 
